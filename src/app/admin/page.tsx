@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { formatCop } from "@/lib/money";
 import { addDays, formatDateTime, formatTime, localDay } from "@/lib/time";
 import { type AgendaItem, getAgenda, getShopTimeZone } from "@/server/admin/agenda";
-import { cancelarComoDueno, reprogramarComoDueno } from "./actions";
+import { cancelarComoDueno, cobrar, marcarNoVino, reprogramarComoDueno } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,7 @@ const STATUS: Record<AgendaItem["status"], string> = {
 };
 
 const ERRORS: Record<string, string> = {
-  invalid_input: "Revisa la fecha, la hora y el barbero.",
+  invalid_input: "Revisa los datos del formulario.",
   slot_taken: "Ese horario se cruza con otra cita.",
   invalid_state: "Esa cita ya no se puede cambiar.",
   not_found: "No encontramos esa cita.",
@@ -25,6 +25,10 @@ const ERRORS: Record<string, string> = {
 const navLink =
   "inline-flex min-h-11 items-center rounded-control border border-border bg-surface px-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 const input = "min-h-11 w-full rounded-control border border-border bg-surface px-3";
+
+function amountDue(item: AgendaItem): number {
+  return item.depositStatus === "paid" ? item.priceCop - item.depositCop : item.priceCop;
+}
 
 function wallClock(instant: Date, timeZone: string): string {
   const time = new Intl.DateTimeFormat("en-GB", {
@@ -98,6 +102,32 @@ export default async function AdminAgendaPage({
                 <a href={whatsappUrl(item, timeZone)} className="mt-1 inline-block underline">
                   WhatsApp
                 </a>
+                {item.status === "confirmed" ? (
+                  <div className="mt-3 flex flex-wrap items-end gap-2">
+                    <form action={cobrar} className="flex flex-wrap items-end gap-2">
+                      <input type="hidden" name="dia" value={day} />
+                      <input type="hidden" name="bookingId" value={item.id} />
+                      <label className="space-y-1">
+                        <span className="block">Cobrar {formatCop(amountDue(item))} con</span>
+                        <select name="metodo" defaultValue="cash" className={input}>
+                          <option value="cash">Efectivo</option>
+                          <option value="nequi">Nequi</option>
+                          <option value="daviplata">Daviplata</option>
+                          <option value="card">Tarjeta</option>
+                          <option value="transfer">Transferencia</option>
+                        </select>
+                      </label>
+                      <Button type="submit">Cobrar</Button>
+                    </form>
+                    <form action={marcarNoVino}>
+                      <input type="hidden" name="dia" value={day} />
+                      <input type="hidden" name="bookingId" value={item.id} />
+                      <Button type="submit" variant="secondary">
+                        No vino
+                      </Button>
+                    </form>
+                  </div>
+                ) : null}
                 {item.status === "confirmed" ? (
                   <details className="mt-3">
                     <summary className="min-h-11 cursor-pointer py-2 font-medium">
