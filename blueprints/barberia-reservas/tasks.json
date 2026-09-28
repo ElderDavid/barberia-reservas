@@ -62,7 +62,7 @@
       "tests/integration/schema.test.ts",
       "drizzle/**"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T3",
