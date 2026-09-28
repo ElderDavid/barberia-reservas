@@ -395,7 +395,7 @@
       "src/app/admin/ventas/page.tsx",
       "tests/integration/sales.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T1",
