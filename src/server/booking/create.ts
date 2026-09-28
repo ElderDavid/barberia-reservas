@@ -1,4 +1,4 @@
-import { and, asc, count, eq, gt, inArray, lt, lte, or } from "drizzle-orm";
+import { and, asc, count, eq, gt, inArray, lt, lte, or, sql } from "drizzle-orm";
 import { z } from "zod";
 import { localDay } from "../../lib/time.ts";
 import { type Db, db } from "../db/client.ts";
@@ -129,6 +129,16 @@ async function isTakenByBooking(
 
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
+/**
+ * Queues writers of one barber's schedule until the transaction ends. Without it, two concurrent
+ * inserts of overlapping bookings each wait on the other's exclusion check and Postgres aborts one
+ * with a deadlock; with it, the second insert sees the first one committed and gets a clean 23P01.
+ * The `bookings_no_overlap` constraint still decides who gets the slot.
+ */
+export async function lockBarberSchedule(tx: Tx, barberId: string): Promise<void> {
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`barber:${barberId}`}, 0))`);
+}
+
 /** Releases transfer holds whose payment window has closed. Returns how many were released. */
 export async function expireStaleHolds(tx: Db | Tx, now: Date): Promise<number> {
   const released = await tx
@@ -211,6 +221,7 @@ export async function createBooking(
         }
 
         for (const barberId of candidates) {
+          await lockBarberSchedule(tx, barberId);
           try {
             const [row] = await tx.transaction(async (savepoint) =>
               savepoint
