@@ -227,7 +227,7 @@
       "src/app/reservar/actions.ts",
       "tests/integration/booking-create.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T2",
