@@ -130,7 +130,7 @@
       "src/app/admin/page.tsx",
       "tests/e2e/admin-login.spec.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T5",
