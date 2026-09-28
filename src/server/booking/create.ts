@@ -55,10 +55,24 @@ const inputSchema = z.object({
   method: z.enum(["cash", "transfer"]),
 });
 
-function isExclusionViolation(error: unknown): boolean {
+function hasCode(error: unknown, code: string): boolean {
   const e = error as { code?: string; cause?: { code?: string } } | null;
-  return e?.code === "23P01" || e?.cause?.code === "23P01";
+  return e?.code === code || e?.cause?.code === code;
 }
+
+function isExclusionViolation(error: unknown): boolean {
+  return hasCode(error, "23P01");
+}
+
+/**
+ * Two transactions inserting overlapping bookings can each wait on the other's exclusion check;
+ * Postgres then aborts one with 40P01. Retrying it lets the constraint give the real answer.
+ */
+function isDeadlock(error: unknown): boolean {
+  return hasCode(error, "40P01");
+}
+
+const MAX_ATTEMPTS = 3;
 
 class SlotTaken extends Error {}
 
@@ -169,75 +183,78 @@ export async function createBooking(
     ? new Date(now.getTime() + settings.holdMinutes * MINUTE_MS)
     : null;
 
-  try {
-    return await db.transaction(async (tx) => {
-      await expireStaleHolds(tx, now);
-      const [customer] = await tx
-        .insert(customers)
-        .values({ name: data.name, phone: data.phone, consentAt: now })
-        .onConflictDoUpdate({
-          target: customers.phone,
-          set: { name: data.name, consentAt: now },
-        })
-        .returning({ id: customers.id });
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await db.transaction(async (tx) => {
+        await expireStaleHolds(tx, now);
+        const [customer] = await tx
+          .insert(customers)
+          .values({ name: data.name, phone: data.phone, consentAt: now })
+          .onConflictDoUpdate({
+            target: customers.phone,
+            set: { name: data.name, consentAt: now },
+          })
+          .returning({ id: customers.id });
 
-      const [pending] = await tx
-        .select({ n: count() })
-        .from(bookings)
-        .where(
-          and(
-            eq(bookings.customerId, customer.id),
-            inArray(bookings.status, ["held", "confirmed"]),
-            gt(bookings.startsAt, now),
-          ),
-        );
-      if (pending.n >= MAX_PENDING_BOOKINGS) {
-        return { ok: false, error: "too_many_bookings" } as const;
-      }
-
-      for (const barberId of candidates) {
-        try {
-          const [row] = await tx.transaction(async (savepoint) =>
-            savepoint
-              .insert(bookings)
-              .values({
-                barberId,
-                serviceId: service.id,
-                customerId: customer.id,
-                startsAt,
-                endsAt,
-                blockedFrom: startsAt,
-                blockedUntil,
-                status: transfer ? "held" : "confirmed",
-                paymentMethod: data.method,
-                priceCop: service.priceCop,
-                depositCop,
-                depositStatus: transfer ? "pending" : "none",
-                holdExpiresAt,
-                manageTokenHash: hash,
-              })
-              .returning({ id: bookings.id }),
+        const [pending] = await tx
+          .select({ n: count() })
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.customerId, customer.id),
+              inArray(bookings.status, ["held", "confirmed"]),
+              gt(bookings.startsAt, now),
+            ),
           );
-          if (transfer) {
-            await tx.insert(payments).values({
-              bookingId: row.id,
-              reference: `BK-${row.id}`,
-              amountCop: depositCop,
-              status: "PENDING",
-            });
-          }
-          return { ok: true, bookingId: row.id, token } as const;
-        } catch (error) {
-          if (!isExclusionViolation(error)) throw error;
+        if (pending.n >= MAX_PENDING_BOOKINGS) {
+          return { ok: false, error: "too_many_bookings" } as const;
         }
+
+        for (const barberId of candidates) {
+          try {
+            const [row] = await tx.transaction(async (savepoint) =>
+              savepoint
+                .insert(bookings)
+                .values({
+                  barberId,
+                  serviceId: service.id,
+                  customerId: customer.id,
+                  startsAt,
+                  endsAt,
+                  blockedFrom: startsAt,
+                  blockedUntil,
+                  status: transfer ? "held" : "confirmed",
+                  paymentMethod: data.method,
+                  priceCop: service.priceCop,
+                  depositCop,
+                  depositStatus: transfer ? "pending" : "none",
+                  holdExpiresAt,
+                  manageTokenHash: hash,
+                })
+                .returning({ id: bookings.id }),
+            );
+            if (transfer) {
+              await tx.insert(payments).values({
+                bookingId: row.id,
+                reference: `BK-${row.id}`,
+                amountCop: depositCop,
+                status: "PENDING",
+              });
+            }
+            return { ok: true, bookingId: row.id, token } as const;
+          } catch (error) {
+            if (!isExclusionViolation(error)) throw error;
+          }
+        }
+        throw new SlotTaken();
+      });
+    } catch (error) {
+      if (error instanceof SlotTaken || isExclusionViolation(error)) {
+        return { ok: false, error: "slot_taken" };
       }
-      throw new SlotTaken();
-    });
-  } catch (error) {
-    if (error instanceof SlotTaken || isExclusionViolation(error)) {
-      return { ok: false, error: "slot_taken" };
+      if (isDeadlock(error) && attempt < MAX_ATTEMPTS) continue;
+      throw error;
     }
-    throw error;
   }
 }
 
