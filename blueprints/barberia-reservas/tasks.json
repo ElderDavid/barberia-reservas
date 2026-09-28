@@ -459,7 +459,7 @@
       "src/components/charts/bar-list.tsx",
       "tests/integration/metrics.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T3",
