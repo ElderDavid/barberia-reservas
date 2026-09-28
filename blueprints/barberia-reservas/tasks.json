@@ -295,7 +295,7 @@
       "tests/integration/wompi-checkout.test.ts",
       "tests/e2e/booking-transfer.spec.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T4",

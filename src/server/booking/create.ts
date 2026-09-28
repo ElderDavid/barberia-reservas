@@ -1,8 +1,9 @@
-import { and, asc, count, eq, gt, inArray, lt, or } from "drizzle-orm";
+import { and, asc, count, eq, gt, inArray, lt, lte, or } from "drizzle-orm";
 import { z } from "zod";
 import { localDay } from "../../lib/time.ts";
-import { db } from "../db/client.ts";
-import { barbers, bookings, customers, services, shopSettings } from "../db/schema.ts";
+import { type Db, db } from "../db/client.ts";
+import { barbers, bookings, customers, payments, services, shopSettings } from "../db/schema.ts";
+import { depositFor } from "../payments/wompi.ts";
 import { getAvailability } from "./availability.ts";
 import { newManageToken } from "./token.ts";
 
@@ -112,6 +113,25 @@ async function isTakenByBooking(
   return rows.length > 0;
 }
 
+type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
+
+/** Releases transfer holds whose payment window has closed. Returns how many were released. */
+export async function expireStaleHolds(tx: Db | Tx, now: Date): Promise<number> {
+  const released = await tx
+    .update(bookings)
+    .set({
+      status: "cancelled",
+      cancelledBy: "system",
+      cancelledAt: now,
+      cancelReason: "pago no completado",
+      depositStatus: "none",
+      updatedAt: now,
+    })
+    .where(and(eq(bookings.status, "held"), lte(bookings.holdExpiresAt, now)))
+    .returning({ id: bookings.id });
+  return released.length;
+}
+
 /**
  * Books a slot. Availability is re-checked, but the insert and the `bookings_no_overlap`
  * constraint decide: a 23P01 means someone else got the slot first.
@@ -123,7 +143,6 @@ export async function createBooking(
   const parsed = inputSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "invalid_input" };
   const data = parsed.data;
-  if (data.method === "transfer") return { ok: false, error: "transfer_unavailable" };
 
   const [settings] = await db.select().from(shopSettings).where(eq(shopSettings.id, 1));
   const [service] = await db
@@ -144,9 +163,15 @@ export async function createBooking(
   }
 
   const { token, hash } = newManageToken();
+  const transfer = data.method === "transfer";
+  const depositCop = transfer ? depositFor(service.priceCop, settings.depositPercent) : 0;
+  const holdExpiresAt = transfer
+    ? new Date(now.getTime() + settings.holdMinutes * MINUTE_MS)
+    : null;
 
   try {
     return await db.transaction(async (tx) => {
+      await expireStaleHolds(tx, now);
       const [customer] = await tx
         .insert(customers)
         .values({ name: data.name, phone: data.phone, consentAt: now })
@@ -183,15 +208,24 @@ export async function createBooking(
                 endsAt,
                 blockedFrom: startsAt,
                 blockedUntil,
-                status: "confirmed",
-                paymentMethod: "cash",
+                status: transfer ? "held" : "confirmed",
+                paymentMethod: data.method,
                 priceCop: service.priceCop,
-                depositCop: 0,
-                depositStatus: "none",
+                depositCop,
+                depositStatus: transfer ? "pending" : "none",
+                holdExpiresAt,
                 manageTokenHash: hash,
               })
               .returning({ id: bookings.id }),
           );
+          if (transfer) {
+            await tx.insert(payments).values({
+              bookingId: row.id,
+              reference: `BK-${row.id}`,
+              amountCop: depositCop,
+              status: "PENDING",
+            });
+          }
           return { ok: true, bookingId: row.id, token } as const;
         } catch (error) {
           if (!isExclusionViolation(error)) throw error;
