@@ -427,7 +427,7 @@
       "src/app/admin/gastos/actions.ts",
       "tests/integration/expenses.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T2",
