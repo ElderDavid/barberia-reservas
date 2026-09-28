@@ -1,0 +1,20 @@
+# dependencies and build output
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# test artifacts
+playwright-report/
+test-results/
+
+# secrets: every .env file is ignored except the committed template
+.env
+.env.*
+!.env.example
+
+# platform
+.vercel/
+.DS_Store

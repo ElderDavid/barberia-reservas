@@ -1,0 +1,7 @@
+# pnpm 11: packages with install scripts only run them when allowed here (the key is
+# `allowBuilds`; the pnpm 10 key `onlyBuiltDependencies` is ignored silently).
+allowBuilds:
+  esbuild: true
+  sharp: true
+  "@biomejs/biome": true
+  "@tailwindcss/oxide": true

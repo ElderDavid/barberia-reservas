@@ -1,0 +1,568 @@
+[
+  {
+    "id": "E1-T1",
+    "title": "Crear el cascarón de la app y el módulo de entorno",
+    "epic": "01-fundacion",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `pnpm lint` corre desde la raíz del proyecto con el bundle presente en `blueprints/` THE SYSTEM SHALL terminar con código 0.",
+      "WHEN `pnpm typecheck` corre THE SYSTEM SHALL terminar con código 0 y cero errores.",
+      "WHEN `pnpm test:unit tests/unit/smoke.test.ts` corre THE SYSTEM SHALL comprobar que `dbEnv()` lanza `MissingEnvError` sin `DATABASE_URL` y devuelve el valor cuando existe, con 0 pruebas fallidas.",
+      "WHEN `pnpm build` corre THE SYSTEM SHALL terminar con código 0.",
+      "WHEN la app compilada arranca y se pide `/` THE SYSTEM SHALL responder HTTP 200."
+    ],
+    "verify": [
+      "pnpm lint",
+      "pnpm typecheck",
+      "pnpm test:unit tests/unit/smoke.test.ts",
+      "pnpm build",
+      "bash scripts/serve-check.sh / 200"
+    ],
+    "checkpoint": "step-01-scaffold",
+    "files": [
+      "src/app/layout.tsx",
+      "src/app/globals.css",
+      "src/app/page.tsx",
+      "src/lib/env.ts",
+      "tests/unit/smoke.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T2",
+    "title": "Definir el esquema, migrar Postgres local y exponer /api/hea",
+    "epic": "01-fundacion",
+    "dependencies": [
+      "E1-T1"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `pnpm db:migrate` corre contra la base local vacía THE SYSTEM SHALL terminar con código 0 y crear las tablas `user`, `session`, `account`, `verification`, `shop_settings`, `barbers`, `services`, `working_hours`, `time_off`, `customers`, `bookings`, `payments`, `sales`, `expense_categories` y `expenses`.",
+      "WHEN `pnpm db:check` corre después de migrar THE SYSTEM SHALL terminar con código 0.",
+      "WHEN se insertan dos reservas `confirmed` del mismo barbero cuyos rangos `[blocked_from, blocked_until)` se solapan THE SYSTEM SHALL rechazar la segunda con el código de Postgres `23P01` (restricción `bookings_no_overlap`), y WHEN la segunda está `cancelled` o los rangos solo se tocan THE SYSTEM SHALL aceptarla.",
+      "WHEN se leen las tablas del esquema `public` THE SYSTEM SHALL reportar `relrowsecurity = true` en todas.",
+      "WHEN la app compilada arranca con la base arriba y se pide `/api/health` THE SYSTEM SHALL responder HTTP 200."
+    ],
+    "verify": [
+      "pnpm db:up",
+      "pnpm db:migrate",
+      "pnpm db:check",
+      "pnpm test:int tests/integration/schema.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm build",
+      "bash scripts/serve-check.sh /api/health 200"
+    ],
+    "checkpoint": "step-02-db-schema",
+    "files": [
+      "src/server/db/schema.ts",
+      "src/server/db/client.ts",
+      "src/app/api/health/route.ts",
+      "tests/integration/schema.test.ts",
+      "drizzle/**"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T3",
+    "title": "Configurar better-auth, crear al dueño y sembrar datos",
+    "epic": "01-fundacion",
+    "dependencies": [
+      "E1-T2"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `seed()` corre dos veces seguidas THE SYSTEM SHALL dejar exactamente una fila en `shop_settings` y exactamente un `user` con el email `OWNER_EMAIL`.",
+      "WHEN `pnpm test:int tests/integration/seed.test.ts` corre THE SYSTEM SHALL confirmar que existen los servicios `Corte clásico`, `Corte + barba` y `Barba`, los barberos `Andrés` y `Camilo` y las categorías `Arriendo`, `Productos`, `Servicios públicos`, `Nómina`, `Mantenimiento` y `Otros`.",
+      "WHEN `auth.api.signInEmail` recibe el email y la clave del dueño sembrado THE SYSTEM SHALL devolver un token de sesión.",
+      "WHEN `auth.api.signInEmail` recibe una clave incorrecta THE SYSTEM SHALL rechazarla y no crear filas en `session`.",
+      "WHEN `auth.api.signUpEmail` recibe un email nuevo THE SYSTEM SHALL rechazarlo porque el registro está deshabilitado.",
+      "WHEN `pnpm db:seed` corre dos veces contra la base de desarrollo THE SYSTEM SHALL terminar con código 0 ambas veces."
+    ],
+    "verify": [
+      "pnpm db:up",
+      "pnpm db:migrate",
+      "pnpm db:seed",
+      "pnpm db:seed",
+      "pnpm test:int tests/integration/seed.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm build"
+    ],
+    "checkpoint": "step-03-auth-seed",
+    "files": [
+      "src/server/auth.ts",
+      "src/app/api/auth/[...all]/route.ts",
+      "scripts/create-owner.ts",
+      "scripts/seed.ts",
+      "tests/integration/seed.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T4",
+    "title": "Ingreso del dueño y panel /admin protegido",
+    "epic": "01-fundacion",
+    "dependencies": [
+      "E1-T3"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN un visitante sin sesión abre `/admin` THE SYSTEM SHALL redirigirlo a `/entrar`.",
+      "WHEN el dueño envía en `/entrar` el `OWNER_EMAIL` y el `OWNER_PASSWORD` sembrados THE SYSTEM SHALL llevarlo a `/admin` y mostrar un encabezado de nivel 1 «Agenda».",
+      "WHEN se envía una clave incorrecta THE SYSTEM SHALL quedarse en `/entrar` y mostrar `Correo o contraseña incorrectos` en un elemento con `role=\"alert\"`.",
+      "WHEN el dueño con sesión abre `/entrar?salir=1` THE SYSTEM SHALL cerrar la sesión de modo que una nueva visita a `/admin` redirija a `/entrar`.",
+      "WHEN `pnpm test:e2e tests/e2e/admin-login.spec.ts` corre THE SYSTEM SHALL terminar con código 0 y 0 pruebas fallidas."
+    ],
+    "verify": [
+      "pnpm db:up",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test:e2e tests/e2e/admin-login.spec.ts",
+      "pnpm build"
+    ],
+    "checkpoint": "step-04-admin-login",
+    "files": [
+      "src/app/entrar/page.tsx",
+      "src/server/session.ts",
+      "src/app/admin/layout.tsx",
+      "src/app/admin/page.tsx",
+      "tests/e2e/admin-login.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T5",
+    "title": "Componentes base, formato de dinero y prueba de tokens",
+    "epic": "01-fundacion",
+    "dependencies": [
+      "E1-T1"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN `pnpm test:unit tests/unit/tokens.test.ts` corre THE SYSTEM SHALL comprobar que `src/app/globals.css` define `--background`, `--surface`, `--border`, `--fg`, `--fg-muted`, `--primary`, `--primary-fg`, `--destructive` y `--success` tanto en `:root` como dentro del bloque `prefers-color-scheme: dark`.",
+      "WHEN esa prueba recorre los `.tsx` de `src/components/` y `src/app/` salvo `src/app/layout.tsx` y `src/app/icons/` THE SYSTEM SHALL encontrar cero literales de color hexadecimales.",
+      "WHEN esa prueba importa `src/components/ui/button.tsx`, `field.tsx` y `card.tsx` THE SYSTEM SHALL encontrar las funciones exportadas `Button`, `Field` y `Card`.",
+      "WHEN `parseCop` recibe `$ 15.000` THE SYSTEM SHALL devolver `15000`, y WHEN recibe `abc` THE SYSTEM SHALL devolver `null`.",
+      "WHEN `pnpm typecheck` y `pnpm lint` corren THE SYSTEM SHALL terminar con código 0."
+    ],
+    "verify": [
+      "pnpm test:unit tests/unit/tokens.test.ts",
+      "pnpm typecheck",
+      "pnpm lint"
+    ],
+    "checkpoint": "step-05-ui-base",
+    "files": [
+      "src/components/ui/button.tsx",
+      "src/components/ui/field.tsx",
+      "src/components/ui/card.tsx",
+      "src/lib/money.ts",
+      "tests/unit/tokens.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T6",
+    "title": "Motor de disponibilidad con zonas horarias",
+    "epic": "01-fundacion",
+    "dependencies": [
+      "E1-T2"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `generateSlots` corre para `America/Bogota` el `2026-10-05` con ventana 09:00–19:00, servicio de 30 minutos, intervalo de 15, sin bloqueos, `minNoticeMinutes` 60 y `now` `2026-10-01T00:00:00Z` THE SYSTEM SHALL devolver 39 slots, el primero `2026-10-05T14:00:00.000Z` y el último `2026-10-05T23:30:00.000Z`.",
+      "WHEN la ventana es 00:00–02:00 en `America/Santiago` el `2026-09-06` (cambio de hora hacia adelante) con servicio e intervalo de 30 minutos THE SYSTEM SHALL devolver exactamente `2026-09-06T04:00:00.000Z` y `2026-09-06T04:30:00.000Z`.",
+      "WHEN la ventana es 22:30–23:30 en `America/Santiago` el `2026-04-04` (noche del cambio de hora hacia atrás) con servicio e intervalo de 30 minutos THE SYSTEM SHALL devolver exactamente `2026-04-05T01:30:00.000Z` y `2026-04-05T02:00:00.000Z`.",
+      "WHEN la ventana es 09:00–10:00 en `Asia/Kolkata` el `2026-10-05` con servicio e intervalo de 30 minutos THE SYSTEM SHALL devolver exactamente `2026-10-05T03:30:00.000Z` y `2026-10-05T04:00:00.000Z`.",
+      "WHEN existe un bloqueo `[2026-10-05T15:00Z, 2026-10-05T15:45Z)` y el servicio de 30 minutos tiene búfer de 10 THE SYSTEM SHALL omitir todo slot de Bogotá cuyo `[inicio, inicio + 40 min)` se solape y conservar `2026-10-05T14:15:00.000Z` y `2026-10-05T15:45:00.000Z`.",
+      "WHEN `getAvailability` corre contra la base de pruebas THE SYSTEM SHALL excluir un slot ocupado por una reserva `confirmed`, incluir un slot cuya única reserva es `held` con `hold_expires_at` vencido, y no devolver slots en un día cubierto por un `time_off` de toda la tienda."
+    ],
+    "verify": [
+      "pnpm test:unit tests/unit/slots.test.ts",
+      "pnpm db:up",
+      "pnpm test:int tests/integration/availability.test.ts",
+      "pnpm typecheck",
+      "pnpm lint"
+    ],
+    "checkpoint": "step-06-slot-engine",
+    "files": [
+      "src/lib/time.ts",
+      "src/server/booking/slots.ts",
+      "src/server/booking/availability.ts",
+      "tests/unit/slots.test.ts",
+      "tests/integration/availability.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T1",
+    "title": "Reserva pública con pago en efectivo",
+    "epic": "02-reservas-y-pagos",
+    "dependencies": [
+      "E1-T5",
+      "E1-T6"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `createBooking` recibe una solicitud válida en efectivo para un slot libre THE SYSTEM SHALL insertar una fila en `bookings` con `status='confirmed'`, `payment_method='cash'`, `deposit_cop=0` y `price_cop` igual al precio vigente del servicio, y devolver un token cuyo SHA-256 hex es igual a `manage_token_hash`.",
+      "WHEN 50 llamadas a `createBooking` para el mismo barbero y la misma hora corren en paralelo THE SYSTEM SHALL devolver `{ ok: true }` exactamente una vez y `{ ok: false, error: \"slot_taken\" }` 49 veces, dejando una sola reserva.",
+      "WHEN la hora pedida no está en `getAvailability` para ese barbero y día (fuera de horario, dentro del aviso mínimo o más allá de `max_advance_days`) THE SYSTEM SHALL devolver `{ ok: false, error: \"slot_unavailable\" }` sin insertar nada.",
+      "WHEN el celular no es un móvil colombiano de 10 dígitos que empieza por 3 o no se dio la autorización de datos THE SYSTEM SHALL devolver `{ ok: false, error: \"invalid_input\" }` sin insertar nada.",
+      "WHEN un celular ya tiene 3 reservas futuras en `held` o `confirmed` THE SYSTEM SHALL devolver `{ ok: false, error: \"too_many_bookings\" }`.",
+      "WHEN `barberId` es `\"any\"` y el primer barbero por `sort_order` está ocupado a esa hora THE SYSTEM SHALL reservar con el siguiente barbero libre."
+    ],
+    "verify": [
+      "pnpm db:up",
+      "pnpm test:int tests/integration/booking-create.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm build"
+    ],
+    "checkpoint": "step-07-booking-cash",
+    "files": [
+      "src/server/booking/token.ts",
+      "src/server/booking/create.ts",
+      "src/app/reservar/page.tsx",
+      "src/app/reservar/actions.ts",
+      "tests/integration/booking-create.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T2",
+    "title": "Página de la cita: cancelar y reprogramar por el cliente",
+    "epic": "02-reservas-y-pagos",
+    "dependencies": [
+      "E2-T1",
+      "E1-T4"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN el cliente cancela con un token válido al menos `self_service_cutoff_hours` antes de `starts_at` THE SYSTEM SHALL poner `status='cancelled'` y `cancelled_by='customer'` y el slot SHALL volver a aparecer en `getAvailability`.",
+      "WHEN el cliente cancela o reprograma más tarde que `self_service_cutoff_hours` antes de `starts_at` THE SYSTEM SHALL devolver `{ ok: false, error: \"cutoff_passed\" }` sin cambiar nada.",
+      "WHEN el cliente reprograma a un slot libre THE SYSTEM SHALL cancelar la original con `cancel_reason='reprogramada'`, crear una reserva `confirmed` cuyo `rescheduled_from_id` es el id original y devolver un token nuevo.",
+      "WHEN el cliente reprograma a un slot ocupado THE SYSTEM SHALL devolver `{ ok: false, error: \"slot_taken\" }` y dejar la reserva original en `confirmed`.",
+      "WHEN una reserva con `deposit_status='paid'` se cancela a tiempo THE SYSTEM SHALL dejarla en `refund_pending`, y WHEN se reprograma THE SYSTEM SHALL marcar la original `transferred` y la nueva `paid` con el mismo `deposit_cop`.",
+      "WHEN `pnpm test:e2e tests/e2e/booking-cash.spec.ts` corre THE SYSTEM SHALL reservar en efectivo desde `/reservar` en un Pixel 7, llegar a `/cita/<token>` con «Cita confirmada», cancelarla ahí y mostrar «Cita cancelada», terminando con código 0."
+    ],
+    "verify": [
+      "pnpm db:up",
+      "pnpm test:int tests/integration/booking-manage.test.ts",
+      "pnpm test:e2e tests/e2e/booking-cash.spec.ts",
+      "pnpm typecheck",
+      "pnpm lint"
+    ],
+    "checkpoint": "step-08-booking-manage",
+    "files": [
+      "src/server/booking/manage.ts",
+      "src/app/cita/[token]/page.tsx",
+      "src/app/cita/[token]/actions.ts",
+      "tests/integration/booking-manage.test.ts",
+      "tests/e2e/booking-cash.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T3",
+    "title": "Pago por transferencia con Wompi: apartado y enlace de pago",
+    "epic": "02-reservas-y-pagos",
+    "dependencies": [
+      "E2-T2"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `integritySignature` recibe la referencia `sk8-438k4-xmxm392-sn2m2`, el monto en centavos `490000`, la moneda `COP` y el secreto `prod_integrity_Z5mMke9x0k8gpErbDqwrJXMqsI6SFli6` THE SYSTEM SHALL devolver `37c8407747e595535433ef8f6a811d853cd943046624a0ec04662b17bbf33bf5` (ejemplo publicado por Wompi).",
+      "WHEN `depositFor` recibe un precio y un porcentaje THE SYSTEM SHALL devolver el precio completo al 100 % y, en otro caso, el porcentaje redondeado hacia arriba al millar sin superar el precio (25000 al 30 % → 8000).",
+      "WHEN `createBooking` recibe una solicitud por transferencia para un slot libre THE SYSTEM SHALL insertar una reserva `held` con `hold_expires_at = now + hold_minutes`, `deposit_status='pending'` y el `deposit_cop` calculado, y una fila en `payments` con `reference = 'BK-' || id de la reserva`, `status='PENDING'` y `amount_cop = deposit_cop`.",
+      "WHEN corre un `createBooking` nuevo después de que venció el `hold_expires_at` de una reserva `held` en ese mismo slot THE SYSTEM SHALL marcar el apartado vencido como `cancelled` con `cancelled_by='system'` y reservar el slot.",
+      "WHEN se arma `checkoutUrl` para una reserva apartada THE SYSTEM SHALL devolver `https://checkout.wompi.co/p/` con `public-key`, `currency=COP`, `amount-in-cents`, `reference`, `signature:integrity`, `redirect-url` hacia `/cita/<token>` y `expiration-time` igual a `hold_expires_at` en ISO-8601, con la firma calculada sobre referencia + monto + `COP` + expiración + secreto.",
+      "WHEN `pnpm test:e2e tests/e2e/booking-transfer.spec.ts` corre THE SYSTEM SHALL mostrar «Pendiente de pago» en `/cita/<token>` y un enlace «Pagar con Wompi» cuyo `href` empieza por `https://checkout.wompi.co/p/`, terminando con código 0."
+    ],
+    "verify": [
+      "pnpm db:up",
+      "pnpm test:int tests/integration/wompi-checkout.test.ts",
+      "pnpm test:int tests/integration/booking-create.test.ts",
+      "pnpm test:e2e tests/e2e/booking-transfer.spec.ts",
+      "pnpm typecheck",
+      "pnpm lint"
+    ],
+    "checkpoint": "step-09-wompi-checkout",
+    "files": [
+      "src/server/payments/wompi.ts",
+      "src/server/booking/create.ts",
+      "src/app/cita/[token]/page.tsx",
+      "tests/integration/wompi-checkout.test.ts",
+      "tests/e2e/booking-transfer.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T4",
+    "title": "Webhook de Wompi: confirmar o liberar la cita",
+    "epic": "02-reservas-y-pagos",
+    "dependencies": [
+      "E2-T3"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `eventChecksum` concatena `1234-1610641025-49201`, `APPROVED`, `4490000`, el timestamp `1530291411` y el secreto `prod_events_OcHnIzeBl5socpwByQ4hA52Em3USQ93Z` THE SYSTEM SHALL devolver `5a18ec5e8fdb7df463e9f94774cba8f583ba21bd04a09ceff2ea68a4bc0aefbe`, y la comparación con `signature.checksum` SHALL ignorar mayúsculas y minúsculas.",
+      "WHEN llega un POST cuyo checksum no coincide THE SYSTEM SHALL responder 400 sin cambiar ninguna fila.",
+      "WHEN llega un evento `transaction.updated` válido con `status: \"APPROVED\"` y el monto correcto para una reserva `held` THE SYSTEM SHALL responder 200, dejar el pago `APPROVED`, la reserva `confirmed` con `deposit_status='paid'` e insertar una venta `kind='deposit'`, `method='wompi'`, `amount_cop = deposit_cop`.",
+      "WHEN el mismo evento APPROVED llega dos veces THE SYSTEM SHALL responder 200 las dos veces y mantener exactamente una venta `deposit` para esa reserva.",
+      "WHEN llega un evento válido con `status` `DECLINED`, `VOIDED` o `ERROR` para una reserva `held` THE SYSTEM SHALL dejarla `cancelled` con `cancelled_by='system'` y liberar el slot.",
+      "WHEN llega un APPROVED después de vencido el apartado y el slot ya lo tomó otra persona THE SYSTEM SHALL dejar la reserva `cancelled`, poner `deposit_status='refund_pending'` y registrar igualmente la venta `deposit`."
+    ],
+    "verify": [
+      "pnpm db:up",
+      "pnpm test:int tests/integration/wompi-webhook.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm build"
+    ],
+    "checkpoint": "step-10-wompi-webhook",
+    "files": [
+      "src/server/payments/webhook.ts",
+      "src/app/api/webhooks/wompi/route.ts",
+      "tests/integration/wompi-webhook.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T5",
+    "title": "Agenda del dueño: ver, reprogramar y cancelar",
+    "epic": "02-reservas-y-pagos",
+    "dependencies": [
+      "E1-T4",
+      "E2-T2"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `getAgenda(day)` corre THE SYSTEM SHALL devolver las reservas `held`, `confirmed`, `completed` y `no_show` de ese día local de la tienda agrupadas por barbero activo en `sort_order`, cada grupo ordenado por `starts_at`, con nombre y celular del cliente y nombre del servicio.",
+      "WHEN el dueño reprograma con `ownerReschedule` THE SYSTEM SHALL ignorar `self_service_cutoff_hours` y el horario laboral, permitir cambiar de barbero y seguir rechazando solapamientos con `{ ok: false, error: \"slot_taken\" }`.",
+      "WHEN el dueño cancela una reserva con `deposit_status='paid'` eligiendo `refund` THE SYSTEM SHALL dejar `deposit_status='refund_pending'`, y eligiendo `forfeit` THE SYSTEM SHALL dejar `deposit_status='forfeited'`, en ambos casos con `cancelled_by='owner'`.",
+      "WHEN la prueba lee `src/app/admin/actions.ts` THE SYSTEM SHALL encontrar `await requireOwner();` como primera sentencia de cada función async exportada.",
+      "WHEN `pnpm build` corre THE SYSTEM SHALL terminar con código 0."
+    ],
+    "verify": [
+      "pnpm db:up",
+      "pnpm test:int tests/integration/agenda.test.ts",
+      "pnpm test:int tests/integration/booking-manage.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm build"
+    ],
+    "checkpoint": "step-11-admin-agenda",
+    "files": [
+      "src/server/admin/agenda.ts",
+      "src/server/booking/manage.ts",
+      "src/app/admin/page.tsx",
+      "src/app/admin/actions.ts",
+      "tests/integration/agenda.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T6",
+    "title": "Cobros, no-shows, ventas sin cita y reembolsos",
+    "epic": "02-reservas-y-pagos",
+    "dependencies": [
+      "E2-T4",
+      "E2-T5"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN el dueño cobra una reserva en efectivo de 25000 eligiendo `nequi` THE SYSTEM SHALL dejarla `completed` e insertar una venta `kind='balance'`, `method='nequi'`, `amount_cop=25000`.",
+      "WHEN el dueño cobra una reserva cuyo anticipo se pagó en línea THE SYSTEM SHALL registrar solo el saldo `price_cop - deposit_cop` (ninguna venta si es cero) y dejar `deposit_status='applied'`.",
+      "WHEN el dueño marca una reserva como `no_show` THE SYSTEM SHALL dejar `status='no_show'` y, si `deposit_status='paid'`, cambiarlo a `forfeited` sin crear reembolso.",
+      "WHEN se registra una venta sin cita de 15000 en `cash` THE SYSTEM SHALL insertar una venta `kind='walk_in'` sin `booking_id`.",
+      "WHEN el dueño marca como devuelto un anticipo `refund_pending` THE SYSTEM SHALL dejar `deposit_status='refunded'` e insertar una venta `kind='refund'` con `amount_cop = -deposit_cop`, y una segunda llamada SHALL no cambiar nada.",
+      "WHEN se cobra una reserva que ya está `completed` THE SYSTEM SHALL devolver `{ ok: false, error: \"invalid_state\" }` sin insertar ventas."
+    ],
+    "verify": [
+      "pnpm db:up",
+      "pnpm test:int tests/integration/sales.test.ts",
+      "pnpm test:int tests/integration/agenda.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm build"
+    ],
+    "checkpoint": "step-12-admin-sales",
+    "files": [
+      "src/server/admin/sales.ts",
+      "src/app/admin/actions.ts",
+      "src/app/admin/page.tsx",
+      "src/app/admin/ventas/page.tsx",
+      "tests/integration/sales.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T1",
+    "title": "Gastos y categorías de gasto",
+    "epic": "03-negocio-y-lanzamiento",
+    "dependencies": [
+      "E1-T4"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN se registra un gasto de 800000 en la categoría `Arriendo` con fecha `2026-10-01` THE SYSTEM SHALL insertar una fila en `expenses` con esos valores.",
+      "WHEN el monto es 0, negativo o no entero, o la categoría está inactiva THE SYSTEM SHALL devolver `{ ok: false, error: \"invalid_input\" }` sin insertar nada.",
+      "WHEN `listExpenses({ from: \"2026-10-01\", to: \"2026-10-31\" })` corre THE SYSTEM SHALL devolver solo gastos con `spent_on` dentro de ese rango inclusivo, del más reciente al más antiguo.",
+      "WHEN se desactiva una categoría con gastos THE SYSTEM SHALL conservar sus gastos y excluirla de `listCategories({ activeOnly: true })`.",
+      "WHEN se crea una categoría con un nombre que ya existe sin distinguir mayúsculas THE SYSTEM SHALL devolver `{ ok: false, error: \"duplicate\" }`.",
+      "WHEN la prueba lee `src/app/admin/gastos/actions.ts` THE SYSTEM SHALL encontrar `await requireOwner();` como primera sentencia de cada función async exportada."
+    ],
+    "verify": [
+      "pnpm db:up",
+      "pnpm test:int tests/integration/expenses.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm build"
+    ],
+    "checkpoint": "step-13-expenses",
+    "files": [
+      "src/server/admin/expenses.ts",
+      "src/app/admin/gastos/page.tsx",
+      "src/app/admin/gastos/actions.ts",
+      "tests/integration/expenses.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T2",
+    "title": "Resumen financiero del negocio",
+    "epic": "03-negocio-y-lanzamiento",
+    "dependencies": [
+      "E2-T6",
+      "E3-T1"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `getMetrics({ from: \"2026-10-01\", to: \"2026-10-31\" })` corre sobre el conjunto de datos descrito en esta tarea THE SYSTEM SHALL devolver `collectedCop = 50000`, `spentCop = 920000` y `profitCop = -870000`.",
+      "WHEN corre sobre ese mismo conjunto THE SYSTEM SHALL devolver `customersServed = 4` (2 reservas completadas + 2 ventas sin cita) y `noShows = 1`.",
+      "WHEN corre sobre ese mismo conjunto THE SYSTEM SHALL devolver en `byMethod` los totales `cash` 35000, `nequi` 15000 y `wompi` 0.",
+      "WHEN corre sobre ese mismo conjunto THE SYSTEM SHALL devolver `expensesByCategory` con `Arriendo` 800000 y `Productos` 120000, en ese orden descendente.",
+      "WHEN una venta ocurre en `2026-11-01T02:00:00Z` THE SYSTEM SHALL contarla en octubre porque el límite de día es `America/Bogota` (21:00 del 31 de octubre)."
+    ],
+    "verify": [
+      "pnpm db:up",
+      "pnpm test:int tests/integration/metrics.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm build"
+    ],
+    "checkpoint": "step-14-dashboard",
+    "files": [
+      "src/server/admin/metrics.ts",
+      "src/app/admin/resumen/page.tsx",
+      "src/components/charts/bar-list.tsx",
+      "tests/integration/metrics.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T3",
+    "title": "Ajustes: servicios, precios, barberos, horarios y políticas",
+    "epic": "03-negocio-y-lanzamiento",
+    "dependencies": [
+      "E2-T1",
+      "E1-T4"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN el dueño cambia `Corte clásico` de 15000 a 18000 THE SYSTEM SHALL usar 18000 en las reservas nuevas mientras las existentes conservan `price_cop` 15000.",
+      "WHEN `self_service_cutoff_hours` se guarda con 3, 4 o 5 THE SYSTEM SHALL aceptarlo, y WHEN se envía 2 o 6 THE SYSTEM SHALL devolver `{ ok: false, error: \"invalid_input\" }` y conservar el valor anterior.",
+      "WHEN `deposit_percent` se envía fuera de 10–100 THE SYSTEM SHALL devolver `{ ok: false, error: \"invalid_input\" }`.",
+      "WHEN el horario del martes de un barbero se reemplaza por 10:00–14:00 THE SYSTEM SHALL hacer que `getAvailability` de ese barbero un martes no devuelva ningún slot antes de las 10:00 ni que termine después de las 14:00 hora local.",
+      "WHEN un barbero se desactiva THE SYSTEM SHALL excluirlo de `getAvailability` con `barberId: \"any\"` sin cambiar sus reservas existentes.",
+      "WHEN la prueba lee `src/app/admin/ajustes/actions.ts` THE SYSTEM SHALL encontrar `await requireOwner();` como primera sentencia de cada función async exportada."
+    ],
+    "verify": [
+      "pnpm db:up",
+      "pnpm test:int tests/integration/settings.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm build"
+    ],
+    "checkpoint": "step-15-settings",
+    "files": [
+      "src/server/admin/settings.ts",
+      "src/app/admin/ajustes/page.tsx",
+      "src/app/admin/ajustes/actions.ts",
+      "tests/integration/settings.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T4",
+    "title": "Portada, política de privacidad, app instalable y accesibili",
+    "epic": "03-negocio-y-lanzamiento",
+    "dependencies": [
+      "E2-T2",
+      "E1-T5"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN se pide `/manifest.webmanifest` THE SYSTEM SHALL devolver JSON con `name`, `short_name`, `start_url` `/`, `display` `standalone` e íconos de tamaños `192x192` y `512x512` que apuntan a `/icons/192` y `/icons/512`.",
+      "WHEN se piden `/icons/192` y `/icons/512` THE SYSTEM SHALL responder 200 con `content-type` `image/png`.",
+      "WHEN se pide `/privacidad` THE SYSTEM SHALL mostrar el nombre de la barbería como responsable y el texto `Ley 1581 de 2012` junto con `conocer, actualizar, rectificar y suprimir`.",
+      "WHEN axe-core analiza `/`, `/reservar`, `/privacidad` y `/entrar` en un Pixel 7 con las etiquetas `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` y `wcag22aa` THE SYSTEM SHALL reportar 0 violaciones.",
+      "WHEN `/` se carga a 320 px CSS de ancho THE SYSTEM SHALL tener `document.documentElement.scrollWidth` igual a `clientWidth`."
+    ],
+    "verify": [
+      "pnpm db:up",
+      "pnpm test:e2e tests/e2e/public.spec.ts",
+      "pnpm test:unit tests/unit/tokens.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm build"
+    ],
+    "checkpoint": "step-16-public-pwa",
+    "files": [
+      "src/app/page.tsx",
+      "src/app/privacidad/page.tsx",
+      "src/app/manifest.ts",
+      "src/app/icons/[size]/route.tsx",
+      "tests/e2e/public.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T5",
+    "title": "Cabeceras de seguridad, cron de apartados, CI y despliegue",
+    "epic": "03-negocio-y-lanzamiento",
+    "dependencies": [
+      "E2-T3",
+      "E3-T2",
+      "E3-T3",
+      "E3-T4"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN se llama `headers()` de `next.config.ts` THE SYSTEM SHALL devolver para `/:path*` `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY` y una `Content-Security-Policy` que contiene `frame-ancestors 'none'`, y la app compilada SHALL enviar `x-content-type-options` en `/`.",
+      "WHEN se llama `GET /api/cron/expire-holds` sin `Authorization: Bearer <CRON_SECRET>` THE SYSTEM SHALL responder 401 sin cambiar nada.",
+      "WHEN se llama con el token correcto THE SYSTEM SHALL cancelar cada reserva `held` cuyo `hold_expires_at` ya pasó (`cancelled_by='system'`) y responder 200 con `{ expired: <n> }`.",
+      "WHEN se parsea `vercel.json` THE SYSTEM SHALL encontrar un cron con `path` `/api/cron/expire-holds` y un `buildCommand` que corre `pnpm db:migrate` solo cuando `VERCEL_ENV` es `production`.",
+      "WHEN se lee `.github/workflows/ci.yml` THE SYSTEM SHALL encontrar, en este orden, `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm typecheck`, `pnpm db:migrate`, `pnpm test`, `pnpm test:e2e` y `pnpm build`."
+    ],
+    "verify": [
+      "pnpm db:up",
+      "pnpm test:int tests/integration/deploy.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm build",
+      "bash scripts/serve-check.sh / 200 x-content-type-options",
+      "bash scripts/serve-check.sh /api/cron/expire-holds 401"
+    ],
+    "checkpoint": "step-17-hardening-deploy",
+    "files": [
+      "next.config.ts",
+      "src/app/api/cron/expire-holds/route.ts",
+      "vercel.json",
+      ".github/workflows/ci.yml",
+      "tests/integration/deploy.test.ts"
+    ],
+    "status": "pending"
+  }
+]

@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:17.11-alpine
+    environment:
+      POSTGRES_USER: barberia
+      POSTGRES_PASSWORD: barberia
+      POSTGRES_DB: barberia
+      PGPASSWORD: barberia
+    ports:
+      - "54329:5432"
+    volumes:
+      - barberia-pg:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # TCP + the last database the init script creates: healthy only after init finished.
+      test: ["CMD-SHELL", "psql -h 127.0.0.1 -U barberia -d barberia_e2e -c 'select 1' > /dev/null"]
+      interval: 2s
+      timeout: 3s
+      retries: 45
+
+volumes:
+  barberia-pg:
