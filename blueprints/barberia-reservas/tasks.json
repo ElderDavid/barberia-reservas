@@ -27,7 +27,7 @@
       "src/lib/env.ts",
       "tests/unit/smoke.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T2",
