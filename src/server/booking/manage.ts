@@ -185,3 +185,22 @@ export async function rescheduleBooking(input: {
   }
   return { ok: true, token };
 }
+
+/** Owner reschedule: no cutoff, no opening-hours check, may change barber; overlaps still fail. */
+export function ownerReschedule(input: {
+  bookingId: string;
+  newStartsAt: Date;
+  newBarberId?: string;
+  now: Date;
+}): Promise<ManageResult> {
+  return rescheduleBooking({ ...input, actor: "owner", enforceCutoff: false });
+}
+
+/** Owner cancel: no cutoff; a paid deposit is refunded or forfeited as the owner decides. */
+export function ownerCancel(input: {
+  bookingId: string;
+  depositDecision: "refund" | "forfeit";
+  now: Date;
+}): Promise<ManageResult> {
+  return cancelBooking({ ...input, actor: "owner", enforceCutoff: false });
+}

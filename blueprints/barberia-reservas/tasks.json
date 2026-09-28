@@ -360,7 +360,7 @@
       "src/app/admin/actions.ts",
       "tests/integration/agenda.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T6",
