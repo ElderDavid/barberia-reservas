@@ -28,7 +28,7 @@ export default async function AjustesPage({
 
   return (
     <section className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Ajustes</h1>
+      <h1 className="font-display text-4xl tracking-tight">Ajustes</h1>
       {params.error ? (
         <p role="alert" className="text-destructive">
           Revisa los datos: algún valor está vacío o fuera del rango permitido.

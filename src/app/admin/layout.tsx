@@ -16,14 +16,14 @@ const LINKS = [
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   await requireOwner();
   return (
-    <div className="space-y-6">
-      <nav aria-label="Panel" className="border-b border-border pb-3">
+    <main id="contenido" className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+      <nav aria-label="Panel" className="border-b border-hairline pb-3">
         <ul className="flex flex-wrap gap-2">
           {LINKS.map((link) => (
             <li key={link.href}>
               <Link
                 href={link.href}
-                className="inline-flex min-h-11 items-center rounded-control px-3 text-fg hover:bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className="inline-flex min-h-11 items-center rounded-control px-3 text-fg hover:bg-surface hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
                 {link.label}
               </Link>
@@ -32,6 +32,6 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         </ul>
       </nav>
       {children}
-    </div>
+    </main>
   );
 }

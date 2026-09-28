@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PageBanner } from "@/components/site/page-banner";
+import { SiteFooter } from "@/components/site/site-footer";
+import { SiteHeader } from "@/components/site/site-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { authEnv } from "@/lib/env";
 import { formatCop } from "@/lib/money";
+import { PHOTOS } from "@/lib/photos";
 import { addDays, formatDateTime, formatTime, localDay } from "@/lib/time";
 import { getAvailability } from "@/server/booking/availability";
 import { findByToken, withinSelfServiceWindow } from "@/server/booking/manage";
 import { checkoutUrl } from "@/server/payments/wompi";
+import { getShopInfo, whatsappUrl } from "@/server/shop";
 import { cancelar, reprogramar } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +37,7 @@ const METHODS: Record<string, string> = {
 };
 
 const choice =
-  "flex min-h-11 items-center justify-center rounded-control border border-border bg-surface px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+  "flex min-h-11 items-center justify-center rounded-control border border-border bg-surface px-3 hover:border-fg motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 function dayLabel(day: string): string {
   const [y, m, d] = day.split("-").map(Number);
@@ -58,6 +63,8 @@ export default async function CitaPage({
 
   const now = new Date();
   const { booking, service, barber, shop } = view;
+  const info = await getShopInfo();
+  const whatsappHref = info.whatsappPhone ? whatsappUrl(info.whatsappPhone) : undefined;
   const canManage = booking.status === "confirmed" && withinSelfServiceWindow(view, now);
   const message = error ? ERRORS[error] : undefined;
   const holdExpiresAt = booking.holdExpiresAt;
@@ -82,116 +89,128 @@ export default async function CitaPage({
       : [];
 
   return (
-    <section className="mx-auto max-w-3xl space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">
-        {TITLES[booking.status] ?? "Tu cita"}
-      </h1>
-      {message ? (
-        <p role="alert" className="text-destructive">
-          {message}
-        </p>
-      ) : null}
-      {booking.status === "cancelled" && booking.cancelReason === "reprogramada" ? (
-        <p>Esta cita fue reprogramada; usa el enlace nuevo.</p>
-      ) : null}
+    <>
+      <SiteHeader shopName={info.name} whatsappHref={whatsappHref} />
+      <main id="contenido">
+        <PageBanner
+          eyebrow="Tu cita"
+          title={TITLES[booking.status] ?? "Tu cita"}
+          photo={PHOTOS.detail}
+        />
+        <section className="mx-auto max-w-3xl space-y-4 px-4 py-12">
+          {message ? (
+            <p role="alert" className="text-destructive">
+              {message}
+            </p>
+          ) : null}
+          {booking.status === "cancelled" && booking.cancelReason === "reprogramada" ? (
+            <p>Esta cita fue reprogramada; usa el enlace nuevo.</p>
+          ) : null}
 
-      <Card>
-        <dl className="space-y-1">
-          <div>
-            <dt className="inline text-fg-muted">Servicio: </dt>
-            <dd className="inline">{service.name}</dd>
-          </div>
-          <div>
-            <dt className="inline text-fg-muted">Barbero: </dt>
-            <dd className="inline">{barber.name}</dd>
-          </div>
-          <div>
-            <dt className="inline text-fg-muted">Fecha: </dt>
-            <dd className="inline">{formatDateTime(booking.startsAt, shop.timezone)}</dd>
-          </div>
-          <div>
-            <dt className="inline text-fg-muted">Precio: </dt>
-            <dd className="inline">{formatCop(booking.priceCop)}</dd>
-          </div>
-          <div>
-            <dt className="inline text-fg-muted">Pago: </dt>
-            <dd className="inline">{METHODS[booking.paymentMethod]}</dd>
-          </div>
-        </dl>
-      </Card>
-
-      {payUrl && holdExpiresAt ? (
-        <Card title="Pendiente de pago">
-          <p className="mt-2 text-2xl font-semibold">{formatCop(booking.depositCop)}</p>
-          <p className="mt-1">
-            Tu horario queda apartado hasta las {formatTime(holdExpiresAt, shop.timezone)}.
-          </p>
-          <a
-            href={payUrl}
-            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 font-medium text-primary-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
-            Pagar con Wompi
-          </a>
-          <Link href={`/cita/${token}`} className="mt-3 inline-block underline">
-            Ya pagué, actualizar
-          </Link>
-        </Card>
-      ) : null}
-      {holdExpired ? <p>El tiempo para pagar terminó y el horario se liberó.</p> : null}
-
-      <p className="text-fg-muted">
-        Guarda este enlace: con él puedes cancelar o cambiar tu cita hasta{" "}
-        {shop.selfServiceCutoffHours} horas antes.
-      </p>
-      <a href={`https://wa.me/${shop.whatsappPhone}`} className="inline-block underline">
-        Escribir a la barbería
-      </a>
-
-      {booking.status === "confirmed" && !canManage ? (
-        <p>Ya no puedes cambiarla desde aquí. Llama o escribe a la barbería.</p>
-      ) : null}
-
-      {canManage ? (
-        <>
-          <Card title="Cambiar hora">
-            <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
-              {days.map((day) => (
-                <li key={day}>
-                  <Link href={`/cita/${token}?dia=${day}`} className={choice}>
-                    {dayLabel(day)}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-            {dia ? (
-              slots.length === 0 ? (
-                <p className="mt-3 text-fg-muted">No hay horarios disponibles este día.</p>
-              ) : (
-                <form action={reprogramar} className="mt-3 grid grid-cols-3 gap-2">
-                  <input type="hidden" name="token" value={token} />
-                  {slots.map((slot) => (
-                    <Button
-                      key={slot.startsAt.toISOString()}
-                      type="submit"
-                      name="hora"
-                      value={slot.startsAt.toISOString()}
-                      variant="secondary"
-                    >
-                      {formatTime(slot.startsAt, shop.timezone)}
-                    </Button>
-                  ))}
-                </form>
-              )
-            ) : null}
+          <Card>
+            <dl className="space-y-1">
+              <div>
+                <dt className="inline text-fg-muted">Servicio: </dt>
+                <dd className="inline">{service.name}</dd>
+              </div>
+              <div>
+                <dt className="inline text-fg-muted">Barbero: </dt>
+                <dd className="inline">{barber.name}</dd>
+              </div>
+              <div>
+                <dt className="inline text-fg-muted">Fecha: </dt>
+                <dd className="inline">{formatDateTime(booking.startsAt, shop.timezone)}</dd>
+              </div>
+              <div>
+                <dt className="inline text-fg-muted">Precio: </dt>
+                <dd className="inline">{formatCop(booking.priceCop)}</dd>
+              </div>
+              <div>
+                <dt className="inline text-fg-muted">Pago: </dt>
+                <dd className="inline">{METHODS[booking.paymentMethod]}</dd>
+              </div>
+            </dl>
           </Card>
-          <form action={cancelar}>
-            <input type="hidden" name="token" value={token} />
-            <Button type="submit" variant="danger" className="w-full">
-              Cancelar cita
-            </Button>
-          </form>
-        </>
-      ) : null}
-    </section>
+
+          {payUrl && holdExpiresAt ? (
+            <Card title="Pendiente de pago">
+              <p className="mt-2 text-2xl font-semibold">{formatCop(booking.depositCop)}</p>
+              <p className="mt-1">
+                Tu horario queda apartado hasta las {formatTime(holdExpiresAt, shop.timezone)}.
+              </p>
+              <a
+                href={payUrl}
+                className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 font-medium text-primary-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                Pagar con Wompi
+              </a>
+              <Link href={`/cita/${token}`} className="mt-3 inline-block underline">
+                Ya pagué, actualizar
+              </Link>
+            </Card>
+          ) : null}
+          {holdExpired ? <p>El tiempo para pagar terminó y el horario se liberó.</p> : null}
+
+          <p className="text-fg-muted">
+            Guarda este enlace: con él puedes cancelar o cambiar tu cita hasta{" "}
+            {shop.selfServiceCutoffHours} horas antes.
+          </p>
+          <a href={`https://wa.me/${shop.whatsappPhone}`} className="inline-block underline">
+            Escribir a la barbería
+          </a>
+
+          {booking.status === "confirmed" && !canManage ? (
+            <p>Ya no puedes cambiarla desde aquí. Llama o escribe a la barbería.</p>
+          ) : null}
+
+          {canManage ? (
+            <>
+              <Card title="Cambiar hora">
+                <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {days.map((day) => (
+                    <li key={day}>
+                      <Link href={`/cita/${token}?dia=${day}`} className={choice}>
+                        {dayLabel(day)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                {dia ? (
+                  slots.length === 0 ? (
+                    <p className="mt-3 text-fg-muted">No hay horarios disponibles este día.</p>
+                  ) : (
+                    <form action={reprogramar} className="mt-3 grid grid-cols-3 gap-2">
+                      <input type="hidden" name="token" value={token} />
+                      {slots.map((slot) => (
+                        <Button
+                          key={slot.startsAt.toISOString()}
+                          type="submit"
+                          name="hora"
+                          value={slot.startsAt.toISOString()}
+                          variant="secondary"
+                        >
+                          {formatTime(slot.startsAt, shop.timezone)}
+                        </Button>
+                      ))}
+                    </form>
+                  )
+                ) : null}
+              </Card>
+              <form action={cancelar}>
+                <input type="hidden" name="token" value={token} />
+                <Button type="submit" variant="danger" className="w-full">
+                  Cancelar cita
+                </Button>
+              </form>
+            </>
+          ) : null}
+        </section>
+      </main>
+      <SiteFooter
+        shopName={info.name}
+        address={info.address || undefined}
+        whatsappHref={whatsappHref}
+      />
+    </>
   );
 }
