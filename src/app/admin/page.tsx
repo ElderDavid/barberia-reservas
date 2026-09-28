@@ -61,7 +61,7 @@ export default async function AdminAgendaPage({
 
   return (
     <section className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Agenda</h1>
+      <h1 className="font-display text-4xl tracking-tight">Agenda</h1>
       <div className="flex flex-wrap items-center gap-2">
         <Link href={`/admin?dia=${addDays(day, -1)}`} className={navLink}>
           Anterior
@@ -90,7 +90,7 @@ export default async function AdminAgendaPage({
         .filter((group) => group.items.length > 0)
         .map((group) => (
           <div key={group.barberId} className="space-y-2">
-            <h2 className="text-lg font-semibold">{group.barberName}</h2>
+            <h2 className="font-display text-2xl tracking-tight">{group.barberName}</h2>
             {group.items.map((item) => (
               <Card key={item.id}>
                 <p className="font-medium">

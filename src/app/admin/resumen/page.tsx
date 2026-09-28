@@ -53,7 +53,7 @@ export default async function ResumenPage({
 
   return (
     <section className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Resumen</h1>
+      <h1 className="font-display text-4xl tracking-tight">Resumen</h1>
       <div className="flex flex-wrap gap-2">
         <Link href={`/admin/resumen?desde=${today}&hasta=${today}`} className={shortcut}>
           Hoy

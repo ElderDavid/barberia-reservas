@@ -9,7 +9,7 @@ const VARIANTS: Record<ButtonVariant, string> = {
 };
 
 const BASE =
-  "inline-flex min-h-11 items-center justify-center rounded-control px-4 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center rounded-control px-4 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60 motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out enabled:hover:-translate-y-0.5";
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant };
 

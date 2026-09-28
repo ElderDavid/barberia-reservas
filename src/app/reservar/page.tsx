@@ -1,12 +1,18 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { BookingProgress } from "@/components/site/booking-progress";
+import { PageBanner } from "@/components/site/page-banner";
+import { SiteFooter } from "@/components/site/site-footer";
+import { SiteHeader } from "@/components/site/site-header";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { formatCop } from "@/lib/money";
+import { PHOTOS } from "@/lib/photos";
 import { addDays, formatDateTime, formatTime, localDay } from "@/lib/time";
 import { getAvailability } from "@/server/booking/availability";
 import { getBookingOptions } from "@/server/booking/create";
+import { getShopInfo, whatsappUrl } from "@/server/shop";
 import { reservar } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +28,7 @@ const ERRORS: Record<string, string> = {
 type Params = { servicio?: string; barbero?: string; dia?: string; hora?: string; error?: string };
 
 const choice =
-  "flex min-h-11 items-center justify-between rounded-control border border-border bg-surface px-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+  "flex min-h-12 items-center justify-between rounded-control border border-border bg-surface px-4 hover:border-fg motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 function href(params: Params): string {
   const query = new URLSearchParams(
@@ -45,7 +51,8 @@ function dayLabel(day: string): string {
 export default async function ReservarPage({ searchParams }: { searchParams: Promise<Params> }) {
   const params = await searchParams;
   const now = new Date();
-  const options = await getBookingOptions();
+  const [options, shop] = await Promise.all([getBookingOptions(), getShopInfo()]);
+  const whatsappHref = shop.whatsappPhone ? whatsappUrl(shop.whatsappPhone) : undefined;
   const { timeZone } = options;
   const service = options.services.find((item) => item.id === params.servicio);
   const barberName =
@@ -54,6 +61,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
       : options.barbers.find((item) => item.id === params.barbero)?.name;
   const error = params.error ? ERRORS[params.error] : undefined;
 
+  const current = !service ? 0 : !barberName ? 1 : !params.dia ? 2 : !params.hora ? 3 : 4;
   let step: ReactNode;
   if (!service) {
     step = (
@@ -192,14 +200,32 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
   }
 
   return (
-    <section className="mx-auto max-w-3xl space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Reserva tu cita</h1>
-      {error ? (
-        <p role="alert" className="text-destructive">
-          {error}
-        </p>
-      ) : null}
-      {step}
-    </section>
+    <>
+      <SiteHeader shopName={shop.name} whatsappHref={whatsappHref} />
+      <main id="contenido">
+        <PageBanner
+          eyebrow="Reserva en línea"
+          title="Reserva tu cita"
+          subtitle="Cinco pasos cortos. Solo verás los horarios que están libres."
+          photo={PHOTOS.client}
+        />
+        <div className="mx-auto max-w-3xl space-y-6 px-4 py-12">
+          <BookingProgress current={current} />
+          {error ? (
+            <p role="alert" className="text-destructive">
+              {error}
+            </p>
+          ) : null}
+          <div key={current} className="rise">
+            {step}
+          </div>
+        </div>
+      </main>
+      <SiteFooter
+        shopName={shop.name}
+        address={shop.address || undefined}
+        whatsappHref={whatsappHref}
+      />
+    </>
   );
 }

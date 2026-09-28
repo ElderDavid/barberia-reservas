@@ -86,26 +86,40 @@ Owner: `src/app/admin/**` (layout calls `requireOwner()`) → `src/app/admin/**/
 
 ## Design system
 
+Source: the owner's `DESIGN.md` style reference (warm monochrome "old-world" editorial look), adapted
+to a barbershop. Tonal layers: Bone → Paper → Cocoa → Ink; no decorative hue.
+
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `--background` | `#fafaf7` | `#0e0e10` | page |
-| `--surface` | `#ffffff` | `#17171a` | cards, panels |
-| `--border` | `#8e8e86` | `#6b6b74` | inputs, dividers |
-| `--fg` | `#18181b` | `#f4f4f5` | body text |
-| `--fg-muted` | `#52525b` | `#a1a1aa` | secondary text |
-| `--primary` | `#7a5410` | `#d4a24c` | primary buttons, links, focus ring |
-| `--primary-fg` | `#ffffff` | `#141414` | text on primary |
-| `--destructive` | `#b91c1c` | `#f87171` | errors, cancel |
-| `--success` | `#15803d` | `#4ade80` | confirmations |
+| `--background` | `#f2f1ed` | `#0f0d0b` | page (Bone) |
+| `--surface` | `#ffffff` | `#1a1713` | cards, panels (Paper) |
+| `--border` | `#8a847a` | `#7a7368` | inputs, choice buttons (≥ 3:1) |
+| `--hairline` | `#e5e3df` | `#2c2822` | decorative card borders, dividers |
+| `--fg` | `#0b0a08` | `#f2f1ed` | body text |
+| `--fg-muted` | `#5c5a56` | `#b4aeac` | secondary text |
+| `--primary` | `#3b3429` | `#e8e2d6` | primary buttons, focus ring |
+| `--primary-fg` | `#ffffff` | `#1a1713` | text on primary |
+| `--destructive` | `#9b1c1c` | `#f19a9a` | errors, cancel |
+| `--success` | `#2e6b3f` | `#8fd19e` | confirmations |
+| `--ink` / `--on-ink` / `--on-ink-muted` | `#0b0a08` / `#f2f1ed` / `#b4aeac` | same | hero bands, footer |
+| `--cocoa` / `--on-cocoa` | `#3b3429` / `#ffffff` | same | accent cards, marquee, visit band |
 
-- Tailwind classes: `bg-background`, `bg-surface`, `border-border`, `text-fg`, `text-fg-muted`,
-  `bg-primary text-primary-fg`, `text-destructive`, `text-success`. No hex literals in `.tsx`.
-- Type: system stack (`font-sans`); page title `text-2xl font-semibold tracking-tight`; body `text-base`.
-- Spacing on the 4px Tailwind scale; radius `rounded-control` (8px) for inputs/buttons,
-  `rounded-card` (12px) for cards; borders instead of shadows.
+- Tailwind classes: `bg-background`, `bg-surface`, `border-border`, `border-hairline`, `text-fg`,
+  `text-fg-muted`, `bg-primary text-primary-fg`, `bg-ink text-on-ink`, `bg-cocoa text-on-cocoa`,
+  `text-destructive`, `text-success`. No hex literals in `.tsx`.
+- Type: headings in the serif `font-display` (Cormorant Garamond via `next/font`, weight 500,
+  tracking -0.012em, line-height 1.08); body and UI in the system `font-sans`. Page titles
+  `font-display text-4xl`/`5xl`.
+- Radius 5px everywhere (`rounded-control`, `rounded-card`); borders and tonal contrast instead of shadows.
+- Photos: `src/lib/photos.ts` (Unsplash CDN) rendered with `next/image` through the custom loader
+  `src/lib/image-loader.ts`; decorative photos get `alt=""`.
 - Touch targets ≥ 44px (`min-h-11`). Focus: `focus-visible:outline-2 outline-primary outline-offset-2`.
-- Motion: 150ms `ease-out`, opacity/transform only, always behind `motion-safe:`.
-- Mobile-first; content max width 768px (`max-w-3xl`), admin 1024px (`max-w-5xl`).
+- Motion only with transform or clip-path (never opacity, so contrast is always final) and only
+  for `prefers-reduced-motion: no-preference`: hover lifts 150ms `ease-out` behind `motion-safe:`;
+  entrance and scroll animations via the `.rise`, `.reveal`, `.reveal-image`, `.unveil`,
+  `.slow-zoom` and `.marquee-track` classes in `globals.css`.
+- Mobile-first; public pages are full-bleed bands with content max width 1152px (`max-w-6xl`),
+  forms 768px (`max-w-3xl`), admin 1024px (`max-w-5xl`). Header and footer sit outside `<main>`.
 
 ## Environment
 

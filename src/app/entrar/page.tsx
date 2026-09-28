@@ -36,8 +36,9 @@ export default function EntrarPage() {
   }
 
   return (
-    <section className="mx-auto max-w-sm space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Entrar</h1>
+    <main id="contenido" className="mx-auto max-w-sm space-y-6 px-4 py-16">
+      <h1 className="font-display text-5xl tracking-tight">Entrar</h1>
+      <p className="text-fg-muted">Panel del dueño de la barbería.</p>
       {signedOut ? (
         <p role="status" className="text-success">
           Sesión cerrada
@@ -83,6 +84,6 @@ export default function EntrarPage() {
           Entrar
         </button>
       </form>
-    </section>
+    </main>
   );
 }

@@ -15,7 +15,10 @@ paths:
 - Every list has an empty state, e.g. "No hay citas para este día."
 - Links inside running text are underlined (`underline`), so they do not rely on color alone.
 - No `<meta http-equiv="refresh">`; offer a link to reload instead.
-- Transitions only with `motion-safe:` and 150ms `ease-out`.
+- Motion only with transform or clip-path, never opacity; hover transitions `motion-safe:` 150ms
+  `ease-out`; entrance and scroll animations only through the classes in `globals.css`, which
+  are off under `prefers-reduced-motion`.
+- Photos with `next/image` + `photoSrc()` from `src/lib/photos.ts`; decorative ones `alt=""`.
 - Copy is Spanish (Colombia), "tú" form: "Reserva tu cita", "Cita confirmada", "Pendiente de pago".
 - Money renders with `formatCop()` from `src/lib/money.ts`; dates/times with `src/lib/time.ts`
   helpers in the shop time zone, e.g. "lunes 5 de octubre, 9:00 a. m.".

@@ -62,7 +62,7 @@ export default async function GastosPage({
 
   return (
     <section className="space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Gastos</h1>
+      <h1 className="font-display text-4xl tracking-tight">Gastos</h1>
       {error ? (
         <p role="alert" className="text-destructive">
           {error}
