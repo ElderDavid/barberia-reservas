@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17.11-alpine
+        env:
+          POSTGRES_USER: barberia
+          POSTGRES_PASSWORD: barberia
+          POSTGRES_DB: barberia
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    # Local, fake values only (the same shape as .env.example): nothing here is a real secret.
+    env:
+      CI: "true"
+      DATABASE_URL: postgres://barberia:barberia@localhost:54329/barberia
+      TEST_DATABASE_URL: postgres://barberia:barberia@localhost:54329/barberia_test
+      E2E_DATABASE_URL: postgres://barberia:barberia@localhost:54329/barberia_e2e
+      MIGRATION_DATABASE_URL: ""
+      APP_URL: http://localhost:3000
+      BETTER_AUTH_SECRET: local-only-secret-not-for-production-0000
+      OWNER_NAME: Dueño
+      OWNER_EMAIL: dueno@barberia.local
+      OWNER_PASSWORD: cambiar-esta-clave
+      WOMPI_PUBLIC_KEY: pub_test_local
+      WOMPI_INTEGRITY_SECRET: test_integrity_local
+      WOMPI_EVENTS_SECRET: test_events_local
+      CRON_SECRET: local-cron-secret-0000
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Create test databases
+        env:
+          PGPASSWORD: barberia
+        run: |
+          psql -h localhost -p 54329 -U barberia -d barberia -c 'create database barberia_test'
+          psql -h localhost -p 54329 -U barberia -d barberia -c 'create database barberia_e2e'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm db:migrate
+      - run: pnpm test
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - run: pnpm build

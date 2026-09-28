@@ -274,3 +274,8 @@ export async function getBookingOptions(): Promise<BookingOptions> {
     barbers: barberRows,
   };
 }
+
+/** Cron cleanup: releases every expired hold in one transaction; returns how many. */
+export async function expireHolds(now: Date): Promise<number> {
+  return db.transaction((tx) => expireStaleHolds(tx, now));
+}
