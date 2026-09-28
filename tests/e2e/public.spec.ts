@@ -39,6 +39,9 @@ test("home lists services and links to booking and privacy", async ({ page }) =>
     /^https:\/\/wa\.me\/\d+$/,
   );
   await expect(page.getByRole("heading", { name: "Servicios" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ingresar" })).toHaveAttribute("href", "/entrar");
+  await expect(page.getByRole("contentinfo")).toContainText("Todos los derechos reservados");
+  await expect(page.getByRole("contentinfo")).toContainText("IngEM");
   await page.getByRole("link", { name: "Política de privacidad" }).click();
   await expect(page.getByRole("heading", { name: "Política de tratamiento de datos" })).toBeVisible(
     { timeout: 30_000 },

@@ -19,7 +19,7 @@ export function SiteHeader({ shopName, whatsappHref }: SiteHeaderProps) {
           {shopName}
         </Link>
         <nav aria-label="Principal">
-          <ul className="flex items-center">
+          <ul className="flex flex-wrap items-center">
             <li>
               <Link href="/#servicios" className={LINK}>
                 Servicios
@@ -32,6 +32,11 @@ export function SiteHeader({ shopName, whatsappHref }: SiteHeaderProps) {
                 </a>
               </li>
             ) : null}
+            <li>
+              <Link href="/entrar" className={LINK}>
+                Ingresar
+              </Link>
+            </li>
             <li>
               <Link
                 href="/reservar"

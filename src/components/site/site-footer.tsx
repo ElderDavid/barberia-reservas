@@ -7,6 +7,7 @@ const LINK =
   "inline-flex min-h-11 items-center underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-on-ink";
 
 export function SiteFooter({ shopName, address, whatsappHref }: SiteFooterProps) {
+  const year = new Date().getFullYear();
   const credits = [...new Set(Object.values(PHOTOS).map((photo) => photo.credit))].join(", ");
   return (
     <footer className="bg-ink text-on-ink">
@@ -35,9 +36,16 @@ export function SiteFooter({ shopName, address, whatsappHref }: SiteFooterProps)
           </li>
         </ul>
       </div>
-      <p className="mx-auto max-w-6xl px-4 pb-8 text-xs text-on-ink-muted">
-        Fotos: {credits} en Unsplash.
-      </p>
+      <div className="mx-auto max-w-6xl space-y-2 border-t border-on-ink-muted/30 px-4 py-8 text-xs text-on-ink-muted">
+        <p>
+          © {year} {shopName}. Todos los derechos reservados. Prohibida la reproducción total o
+          parcial de los contenidos, textos y diseño de este sitio sin autorización escrita.
+        </p>
+        <p>Fotos: {credits} en Unsplash, usadas bajo la licencia de Unsplash.</p>
+        <p>
+          Diseño y desarrollo: <span className="font-display text-base text-on-ink">IngEM</span>
+        </p>
+      </div>
     </footer>
   );
 }
