@@ -193,7 +193,7 @@
       "tests/unit/slots.test.ts",
       "tests/integration/availability.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T1",
