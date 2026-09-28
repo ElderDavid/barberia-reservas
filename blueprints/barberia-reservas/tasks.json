@@ -526,7 +526,7 @@
       "src/app/icons/[size]/route.tsx",
       "tests/e2e/public.spec.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T5",
