@@ -3,6 +3,7 @@ import { localDay } from "../../lib/time.ts";
 import { db } from "../db/client.ts";
 import { barbers, bookings, customers, services, shopSettings } from "../db/schema.ts";
 import { getAvailability } from "./availability.ts";
+import { lockBarberSchedule } from "./create.ts";
 import { hashToken, newManageToken } from "./token.ts";
 
 type Booking = typeof bookings.$inferSelect;
@@ -157,6 +158,7 @@ export async function rescheduleBooking(input: {
           updatedAt: input.now,
         })
         .where(eq(bookings.id, booking.id));
+      await lockBarberSchedule(tx, barberId);
       try {
         await tx.insert(bookings).values({
           barberId,
