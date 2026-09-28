@@ -563,6 +563,6 @@
       ".github/workflows/ci.yml",
       "tests/integration/deploy.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   }
 ]
