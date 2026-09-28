@@ -261,7 +261,7 @@
       "tests/integration/booking-manage.test.ts",
       "tests/e2e/booking-cash.spec.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T3",
