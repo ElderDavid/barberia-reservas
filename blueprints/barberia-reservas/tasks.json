@@ -492,7 +492,7 @@
       "src/app/admin/ajustes/actions.ts",
       "tests/integration/settings.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T4",
