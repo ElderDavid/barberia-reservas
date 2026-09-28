@@ -2,10 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { authEnv } from "@/lib/env";
 import { formatCop } from "@/lib/money";
 import { addDays, formatDateTime, formatTime, localDay } from "@/lib/time";
 import { getAvailability } from "@/server/booking/availability";
 import { findByToken, withinSelfServiceWindow } from "@/server/booking/manage";
+import { checkoutUrl } from "@/server/payments/wompi";
 import { cancelar, reprogramar } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +60,19 @@ export default async function CitaPage({
   const { booking, service, barber, shop } = view;
   const canManage = booking.status === "confirmed" && withinSelfServiceWindow(view, now);
   const message = error ? ERRORS[error] : undefined;
+  const holdExpiresAt = booking.holdExpiresAt;
+  const holdActive =
+    booking.status === "held" && holdExpiresAt !== null && holdExpiresAt.getTime() > now.getTime();
+  const holdExpired = booking.status === "held" && !holdActive;
+  const payUrl =
+    holdActive && holdExpiresAt
+      ? checkoutUrl({
+          reference: `BK-${booking.id}`,
+          amountCop: booking.depositCop,
+          expiresAt: holdExpiresAt,
+          redirectUrl: `${authEnv().APP_URL}/cita/${token}`,
+        })
+      : null;
 
   const today = localDay(now, shop.timezone);
   const days = Array.from({ length: 14 }, (_, i) => addDays(today, i));
@@ -104,6 +119,25 @@ export default async function CitaPage({
           </div>
         </dl>
       </Card>
+
+      {payUrl && holdExpiresAt ? (
+        <Card title="Pendiente de pago">
+          <p className="mt-2 text-2xl font-semibold">{formatCop(booking.depositCop)}</p>
+          <p className="mt-1">
+            Tu horario queda apartado hasta las {formatTime(holdExpiresAt, shop.timezone)}.
+          </p>
+          <a
+            href={payUrl}
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-control bg-primary px-4 font-medium text-primary-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Pagar con Wompi
+          </a>
+          <Link href={`/cita/${token}`} className="mt-3 inline-block underline">
+            Ya pagué, actualizar
+          </Link>
+        </Card>
+      ) : null}
+      {holdExpired ? <p>El tiempo para pagar terminó y el horario se liberó.</p> : null}
 
       <p className="text-fg-muted">
         Guarda este enlace: con él puedes cancelar o cambiar tu cita hasta{" "}
