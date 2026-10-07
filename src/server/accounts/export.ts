@@ -1,6 +1,6 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "../db/client.ts";
-import { barbers, bookings, consents, services, user } from "../db/schema.ts";
+import { barbers, bookings, consents, reviews, services, user } from "../db/schema.ts";
 
 export type AccountExport = {
   exportedAt: string;
@@ -12,6 +12,12 @@ export type AccountExport = {
     startsAt: string;
     status: string;
     priceCop: number;
+  }[];
+  reviews: {
+    bookingStartsAt: string;
+    rating: number;
+    comment: string;
+    ownerReply: string | null;
   }[];
 };
 
@@ -45,10 +51,22 @@ export async function exportAccount(userId: string, now: Date): Promise<AccountE
     .innerJoin(barbers, eq(barbers.id, bookings.barberId))
     .where(eq(bookings.userId, userId))
     .orderBy(asc(bookings.startsAt));
+  const rated = await db
+    .select({
+      bookingStartsAt: bookings.startsAt,
+      rating: reviews.rating,
+      comment: reviews.comment,
+      ownerReply: reviews.ownerReply,
+    })
+    .from(reviews)
+    .innerJoin(bookings, eq(bookings.id, reviews.bookingId))
+    .where(eq(reviews.userId, userId))
+    .orderBy(asc(bookings.startsAt));
   return {
     exportedAt: now.toISOString(),
     profile: { ...profile, createdAt: profile.createdAt.toISOString() },
     consents: rows.map((r) => ({ ...r, acceptedAt: r.acceptedAt.toISOString() })),
     bookings: booked.map((b) => ({ ...b, startsAt: b.startsAt.toISOString() })),
+    reviews: rated.map((r) => ({ ...r, bookingStartsAt: r.bookingStartsAt.toISOString() })),
   };
 }

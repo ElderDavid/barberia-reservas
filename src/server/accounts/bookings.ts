@@ -3,7 +3,7 @@ import { z } from "zod";
 import { type BookingView, findById } from "../booking/manage.ts";
 import { hashToken } from "../booking/token.ts";
 import { db } from "../db/client.ts";
-import { barbers, bookings, services } from "../db/schema.ts";
+import { barbers, bookings, reviews, services } from "../db/schema.ts";
 
 export type AccountBooking = {
   id: string;
@@ -12,6 +12,8 @@ export type AccountBooking = {
   serviceName: string;
   barberName: string;
   priceCop: number;
+  /** Stars the customer gave this visit; null when not rated. */
+  rating: number | null;
 };
 
 export type AccountBookings = {
@@ -35,10 +37,12 @@ export async function listAccountBookings(userId: string, now: Date): Promise<Ac
       serviceName: services.name,
       barberName: barbers.name,
       priceCop: bookings.priceCop,
+      rating: reviews.rating,
     })
     .from(bookings)
     .innerJoin(services, eq(services.id, bookings.serviceId))
     .innerJoin(barbers, eq(barbers.id, bookings.barberId))
+    .leftJoin(reviews, eq(reviews.bookingId, bookings.id))
     .where(eq(bookings.userId, userId))
     .orderBy(asc(bookings.startsAt));
   const result: AccountBookings = { upcoming: [], past: [], cancelled: [], visits: 0 };

@@ -348,3 +348,32 @@ export const consents = pgTable(
     index("consents_user").on(t.userId),
   ],
 );
+
+// ── reviews: one rating per attended booking, answered by the owner ────────────
+export const reviews = pgTable(
+  "reviews",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    bookingId: uuid("booking_id")
+      .notNull()
+      .unique()
+      .references(() => bookings.id, { onDelete: "restrict" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    rating: smallint("rating").notNull(),
+    comment: text("comment").notNull().default(""),
+    ownerReply: text("owner_reply"),
+    repliedAt: tstz("replied_at"),
+    hiddenAt: tstz("hidden_at"), // hidden by the owner for breaking the terms
+    createdAt: tstz("created_at").notNull().defaultNow(),
+    updatedAt: tstz("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    check("reviews_rating", sql`${t.rating} between 1 and 5`),
+    check("reviews_comment", sql`char_length(${t.comment}) <= 500`),
+    check("reviews_owner_reply", sql`char_length(${t.ownerReply}) <= 500`),
+    index("reviews_user").on(t.userId),
+    index("reviews_created").on(t.createdAt),
+  ],
+);
