@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createBooking } from "@/server/booking/create";
+import { getSessionUser } from "@/server/session";
 
 function field(formData: FormData, name: string): string {
   const value = formData.get(name);
@@ -14,6 +15,8 @@ export async function reservar(formData: FormData): Promise<void> {
   const dia = field(formData, "dia");
   const hora = field(formData, "hora");
   const method = field(formData, "metodo") === "transfer" ? "transfer" : "cash";
+  // Only a customer's account collects bookings; the owner booking for someone stays a guest.
+  const user = await getSessionUser();
 
   const result = await createBooking(
     {
@@ -24,6 +27,7 @@ export async function reservar(formData: FormData): Promise<void> {
       phone: field(formData, "celular"),
       consent: formData.get("autorizo") === "si",
       method,
+      userId: user?.role === "customer" ? user.id : null,
     },
     new Date(),
   );

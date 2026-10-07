@@ -75,7 +75,7 @@ Owner: `src/app/admin/**` (layout calls `requireOwner()`) → `src/app/admin/**/
    `namespace`, no constructor parameter properties — Node's type stripping rejects them.
 3. Server-first: pages are Server Components; `"use client"` only on a leaf that needs state or
    browser APIs (today `src/app/entrar/page.tsx`, the service-worker registration, and the
-   "Mis citas" list/remember components, which use localStorage). Forms are plain `<form action={serverAction}>`;
+   "Mis citas" list/remember/claim components, which use localStorage). Forms are plain `<form action={serverAction}>`;
    the action takes `(formData: FormData)` and on failure redirects back with `?error=<code>`, which
    the page renders as a Spanish message in `role="alert"`.
 4. Every page or route handler that reads the database exports `export const dynamic = "force-dynamic";`.

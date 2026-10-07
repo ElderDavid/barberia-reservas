@@ -227,6 +227,8 @@ export const bookings = pgTable(
     customerId: uuid("customer_id")
       .notNull()
       .references(() => customers.id, { onDelete: "restrict" }),
+    // The customer account that owns the booking; null for guests and deleted accounts.
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
     startsAt: tstz("starts_at").notNull(),
     endsAt: tstz("ends_at").notNull(),
     blockedFrom: tstz("blocked_from").notNull(),
@@ -256,6 +258,7 @@ export const bookings = pgTable(
     check("bookings_hold", sql`${t.status} <> 'held' or ${t.holdExpiresAt} is not null`),
     index("bookings_barber_starts").on(t.barberId, t.startsAt),
     index("bookings_customer").on(t.customerId),
+    index("bookings_user").on(t.userId),
     index("bookings_status_hold").on(t.status, t.holdExpiresAt),
   ],
 );
