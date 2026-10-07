@@ -102,6 +102,15 @@ describe("customer reviews", () => {
     expect(count).toBe(0);
   });
 
+  it("counts a browser line break as one character", async () => {
+    await complete(bookingId);
+    const comment = `${"a".repeat(99)}\r\n`.repeat(5).trimEnd();
+    expect(await saveReview(ana, { bookingId, rating: "5", comment }, now)).toEqual({ ok: true });
+    expect((await getAccountReview(ana, bookingId))?.comment).toBe(
+      comment.replaceAll("\r\n", "\n"),
+    );
+  });
+
   it("rejects malformed input", async () => {
     await complete(bookingId);
     for (const input of [

@@ -73,6 +73,10 @@ test("a customer rates an attended visit and the owner answers", async ({ page, 
   expect(barber).not.toBe("");
   await page.getByRole("link", { name: "Calificar visita" }).click();
   await heading(page, /¿Cómo te fue con/);
+  // Arrow keys move the way the stars are drawn: right means more stars.
+  await page.locator("label", { hasText: "3 estrellas" }).click();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.getByRole("radio", { name: "4 estrellas" })).toBeChecked();
   await page.locator("label", { hasText: "5 estrellas" }).click();
   await expect(page.getByRole("radio", { name: "5 estrellas" })).toBeChecked();
   await page.getByLabel("Comentario (opcional)").fill("Excelente corte, muy puntual.");

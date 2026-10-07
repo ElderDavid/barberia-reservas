@@ -99,6 +99,8 @@ describe("owner reviews and barber profile", () => {
     });
     const [row] = await listReviews("todas");
     expect(row.ownerReply).toBe("Gracias, Ana");
+    const reply = `${"b".repeat(99)}\r\n`.repeat(5).trimEnd();
+    expect(await replyToReview({ reviewId: id, reply }, now)).toEqual({ ok: true });
     expect(await replyToReview({ reviewId: id, reply: "   " }, now)).toEqual({
       ok: false,
       error: "invalid_input",

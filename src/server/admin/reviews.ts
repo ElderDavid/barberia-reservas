@@ -1,5 +1,6 @@
 import { and, desc, eq, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
+import { lineBreaks } from "../accounts/reviews.ts";
 import { db } from "../db/client.ts";
 import { barbers, bookings, reviews, services, user } from "../db/schema.ts";
 
@@ -22,7 +23,10 @@ export type OwnerReviewResult = { ok: true } | { ok: false; error: "invalid_inpu
 const LIMIT = 100;
 const unanswered = and(isNull(reviews.ownerReply), isNull(reviews.hiddenAt));
 
-const replySchema = z.object({ reviewId: z.uuid(), reply: z.string().trim().min(1).max(500) });
+const replySchema = z.object({
+  reviewId: z.uuid(),
+  reply: z.string().transform(lineBreaks).pipe(z.string().trim().min(1).max(500)),
+});
 const hiddenSchema = z.object({ reviewId: z.uuid(), hidden: z.enum(["0", "1"]) });
 
 /** Reviews for the owner's "Opiniones" page, newest first. */

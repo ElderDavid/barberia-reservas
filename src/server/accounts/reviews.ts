@@ -15,10 +15,13 @@ export type SaveReviewResult =
   | { ok: true }
   | { ok: false; error: "invalid_input" | "not_found" | "not_completed" | "already_replied" };
 
+/** Browsers send textarea line breaks as CRLF but count them as one character in `maxLength`. */
+export const lineBreaks = (s: string) => s.replace(/\r\n?/g, "\n");
+
 const reviewSchema = z.object({
   bookingId: z.uuid(),
   rating: z.coerce.number().int().min(1).max(5),
-  comment: z.string().trim().max(500),
+  comment: z.string().transform(lineBreaks).pipe(z.string().trim().max(500)),
 });
 
 /**

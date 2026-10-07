@@ -73,7 +73,10 @@ export default async function CalificarPage({
           className="space-y-6 rounded-card border border-hairline bg-surface p-5 sm:p-6"
         >
           <input type="hidden" name="bookingId" value={bookingId} />
-          <StarRatingInput defaultValue={review?.rating} />
+          <StarRatingInput
+            defaultValue={review?.rating}
+            describedBy={message ? "review-error" : undefined}
+          />
           <div className="space-y-1">
             <label htmlFor="comment" className="block font-medium">
               Comentario (opcional)
