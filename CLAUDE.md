@@ -138,6 +138,7 @@ to a barbershop. Tonal layers: Bone → Paper → Cocoa → Ink; no decorative h
 | `CRON_SECRET` | 17 | `src/app/api/cron/expire-holds/route.ts` |
 | `MIGRATION_DATABASE_URL` | prod only | `drizzle.config.ts` |
 | `ANDROID_PACKAGE_NAME`, `ANDROID_CERT_SHA256` | optional | `/.well-known/assetlinks.json` (Play Store app, `docs/play-store.md`) |
+| `RESEND_API_KEY`, `MAIL_FROM` | optional | `src/server/mail.ts` — password-reset mails; without them `/recuperar` points to WhatsApp |
 
 `.env.example` is committed and stays in sync; `.env` is created from it and never committed.
 

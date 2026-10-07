@@ -20,6 +20,7 @@ import { PHOTOS } from "@/lib/photos";
 import { addDays, formatDateTime, formatTime, localDay, localMinutes } from "@/lib/time";
 import { getAvailability } from "@/server/booking/availability";
 import { getBookingOptions } from "@/server/booking/create";
+import { getAccountInitial } from "@/server/session";
 import { getShopInfo, whatsappUrl } from "@/server/shop";
 import { reservar } from "./actions";
 
@@ -47,6 +48,7 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
   const now = new Date();
   const [options, shop] = await Promise.all([getBookingOptions(), getShopInfo()]);
   const whatsappHref = shop.whatsappPhone ? whatsappUrl(shop.whatsappPhone) : undefined;
+  const accountInitial = await getAccountInitial();
   const { timeZone } = options;
   const service = options.services.find((item) => item.id === params.servicio);
   const barberName =
@@ -154,7 +156,11 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <SiteHeader shopName={shop.name} whatsappHref={whatsappHref} />
+      <SiteHeader
+        shopName={shop.name}
+        whatsappHref={whatsappHref}
+        accountInitial={accountInitial}
+      />
       <main id="contenido">
         <PageBanner
           eyebrow="Reserva en línea"

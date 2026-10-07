@@ -8,6 +8,7 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { Steps } from "@/components/site/steps";
 import { Visit } from "@/components/site/visit";
+import { getAccountInitial } from "@/server/session";
 import { getPublicShop, whatsappUrl } from "@/server/shop";
 
 export const dynamic = "force-dynamic";
@@ -15,13 +16,18 @@ export const dynamic = "force-dynamic";
 export default async function HomePage() {
   const shop = await getPublicShop();
   const whatsappHref = shop.whatsappPhone ? whatsappUrl(shop.whatsappPhone) : undefined;
+  const accountInitial = await getAccountInitial();
   const address = shop.address || undefined;
   const marquee = shop.services.length
     ? shop.services.map((service) => service.name)
     : ["Corte", "Barba", "Afeitado con navaja"];
   return (
     <>
-      <SiteHeader shopName={shop.name} whatsappHref={whatsappHref} />
+      <SiteHeader
+        shopName={shop.name}
+        whatsappHref={whatsappHref}
+        accountInitial={accountInitial}
+      />
       <main id="contenido">
         <Hero shopName={shop.name} address={address} whatsappHref={whatsappHref} />
         <Marquee items={[...new Set(marquee)]} />

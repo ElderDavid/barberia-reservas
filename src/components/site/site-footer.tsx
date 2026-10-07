@@ -31,7 +31,12 @@ export function SiteFooter({ shopName, address, whatsappHref }: SiteFooterProps)
           ) : null}
           <li>
             <Link href="/privacidad" className={LINK}>
-              Política de privacidad
+              Tratamiento de datos
+            </Link>
+          </li>
+          <li>
+            <Link href="/terminos" className={LINK}>
+              Términos y condiciones
             </Link>
           </li>
         </ul>

@@ -1,11 +1,16 @@
 import Link from "next/link";
 
-type SiteHeaderProps = { shopName: string; whatsappHref?: string };
+type SiteHeaderProps = {
+  shopName: string;
+  whatsappHref?: string;
+  /** Signed-in customer's first letter; the header then links to Cuenta instead of Ingresar. */
+  accountInitial?: string;
+};
 
 const LINK =
   "inline-flex min-h-11 items-center px-2 text-sm text-fg underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
-export function SiteHeader({ shopName, whatsappHref }: SiteHeaderProps) {
+export function SiteHeader({ shopName, whatsappHref, accountInitial }: SiteHeaderProps) {
   return (
     <header className="bg-surface">
       <p className="border-b border-hairline px-4 py-2 text-center text-xs text-fg-muted">
@@ -33,9 +38,19 @@ export function SiteHeader({ shopName, whatsappHref }: SiteHeaderProps) {
               </li>
             ) : null}
             <li>
-              <Link href="/entrar" className={LINK}>
-                Ingresar
-              </Link>
+              {accountInitial ? (
+                <Link
+                  href="/cuenta"
+                  aria-label="Mi cuenta"
+                  className="ml-1 inline-flex size-11 items-center justify-center rounded-full bg-cocoa font-display text-xl text-on-cocoa focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                >
+                  {accountInitial}
+                </Link>
+              ) : (
+                <Link href="/entrar" className={LINK}>
+                  Ingresar
+                </Link>
+              )}
             </li>
             <li>
               <Link

@@ -40,6 +40,32 @@ export async function updateShopSettings(
   return { ok: true };
 }
 
+const legalSchema = z
+  .object({
+    legalName: z.string().trim().min(2).max(120),
+    legalIdType: z.enum(["CC", "NIT"]),
+    legalIdNumber: z.string().trim(),
+    privacyEmail: z.email().trim().toLowerCase(),
+  })
+  .refine(
+    (v) => (v.legalIdType === "NIT" ? /^\d{5,12}(-\d)?$/ : /^\d{5,12}$/).test(v.legalIdNumber),
+    { path: ["legalIdNumber"] },
+  );
+
+/** Saves the responsible party shown on the legal pages. The shop row must exist already. */
+export async function updateLegalInfo(
+  input: Record<keyof z.input<typeof legalSchema>, string>,
+): Promise<SettingsResult> {
+  const parsed = legalSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid_input" };
+  const updated = await db
+    .update(shopSettings)
+    .set({ ...parsed.data, updatedAt: new Date() })
+    .where(eq(shopSettings.id, 1))
+    .returning({ id: shopSettings.id });
+  return updated.length > 0 ? { ok: true } : { ok: false, error: "not_found" };
+}
+
 const serviceSchema = z.object({
   id: z.uuid().optional(),
   name: z.string().trim().min(2).max(60),

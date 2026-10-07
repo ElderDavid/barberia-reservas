@@ -9,6 +9,7 @@ import {
   removeTimeOff,
   type SettingsResult,
   setWorkingHours,
+  updateLegalInfo,
   updateShopSettings,
   upsertBarber,
   upsertService,
@@ -113,4 +114,17 @@ export async function quitarDiaLibre(formData: FormData): Promise<void> {
   await requireOwner();
   const id = z.uuid().safeParse(fields(formData).id);
   done(id.success ? await removeTimeOff(id.data) : { ok: false, error: "invalid_input" });
+}
+
+export async function guardarDatosLegales(formData: FormData): Promise<void> {
+  await requireOwner();
+  const f = fields(formData);
+  done(
+    await updateLegalInfo({
+      legalName: f.responsable ?? "",
+      legalIdType: f.tipoDocumento ?? "",
+      legalIdNumber: (f.numeroDocumento ?? "").replace(/[.\s]/g, ""),
+      privacyEmail: f.correoDatos ?? "",
+    }),
+  );
 }

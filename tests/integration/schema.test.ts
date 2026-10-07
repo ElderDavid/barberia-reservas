@@ -18,6 +18,7 @@ const TABLES = [
   "sales",
   "expense_categories",
   "expenses",
+  "consents",
 ];
 
 let shop: ShopFixture;
@@ -77,5 +78,36 @@ describe("database schema", () => {
     `;
     expect(rows.length).toBeGreaterThanOrEqual(TABLES.length);
     for (const row of rows) expect(row.relrowsecurity, row.relname).toBe(true);
+  });
+
+  it("user.role defaults to customer and rejects other values", async () => {
+    await sql`insert into "user" (id, name, email) values ('u1', 'Ana', 'ana@example.com')`;
+    const [row] = await sql<{ role: string; phone: string | null }[]>`
+      select role, phone from "user" where id = 'u1'
+    `;
+    expect(row).toEqual({ role: "customer", phone: null });
+    await expect(
+      sql`insert into "user" (id, name, email, role) values ('u2', 'Bo', 'bo@example.com', 'admin')`,
+    ).rejects.toMatchObject({ code: "23514" });
+  });
+
+  it("consents and legal columns exist", async () => {
+    await sql`insert into "user" (id, name, email) values ('u1', 'Ana', 'ana@example.com')`;
+    await sql`
+      insert into consents (user_id, kind, version, channel)
+      values ('u1', 'privacy', '2026-10-07', 'registro')
+    `;
+    await expect(
+      sql`insert into consents (user_id, kind, version, channel) values ('u1', 'otro', 'v', 'registro')`,
+    ).rejects.toMatchObject({ code: "23514" });
+    const [settings] = await sql<Record<string, string>[]>`
+      select legal_name, legal_id_type, legal_id_number, privacy_email from shop_settings where id = 1
+    `;
+    expect(settings).toEqual({
+      legal_name: "",
+      legal_id_type: "",
+      legal_id_number: "",
+      privacy_email: "",
+    });
   });
 });

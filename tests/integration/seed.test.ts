@@ -52,11 +52,13 @@ describe("seed and owner auth", () => {
     expect(sessions.n).toBe(0);
   });
 
-  it("rejects sign-up because registration is disabled", async () => {
-    await expect(
-      auth.api.signUpEmail({
-        body: { name: "X", email: "otro@barberia.local", password: "una-clave-larga-1" },
-      }),
-    ).rejects.toThrow();
+  it("open sign-up creates customers, never another owner", async () => {
+    await auth.api.signUpEmail({
+      body: { name: "X", email: "otro@barberia.local", password: "una-clave-larga-1" },
+    });
+    const rows = await sql<{ email: string; role: string }[]>`
+      select email, role from "user" where role = 'owner'
+    `;
+    expect(rows).toEqual([{ email: ownerEnv().OWNER_EMAIL, role: "owner" }]);
   });
 });

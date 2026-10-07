@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { Icon, type IconName } from "@/components/ui/icon";
 
-export type AppTab = "inicio" | "reservar" | "mis-citas" | "barberos";
+export type AppTab = "inicio" | "reservar" | "mis-citas" | "cuenta";
 
 const TABS: { id: AppTab; label: string; href: string; icon: IconName }[] = [
   { id: "inicio", label: "Inicio", href: "/", icon: "home" },
   { id: "reservar", label: "Reservar", href: "/reservar", icon: "calendar" },
   { id: "mis-citas", label: "Mis citas", href: "/mis-citas", icon: "ticket" },
-  { id: "barberos", label: "Barberos", href: "/#barberos", icon: "users" },
+  { id: "cuenta", label: "Cuenta", href: "/cuenta", icon: "user" },
 ];
 
 /**

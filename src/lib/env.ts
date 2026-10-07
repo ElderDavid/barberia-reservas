@@ -75,3 +75,11 @@ export function androidEnv(): z.infer<typeof androidSchema> | null {
   const result = androidSchema.safeParse(process.env);
   return result.success ? result.data : null;
 }
+
+const mailSchema = z.object({ RESEND_API_KEY: z.string().min(1), MAIL_FROM: z.string().min(3) });
+
+/** Resend credentials, or null when mail is not configured (password reset then falls back to WhatsApp). */
+export function mailEnv(): z.infer<typeof mailSchema> | null {
+  const result = mailSchema.safeParse(process.env);
+  return result.success ? result.data : null;
+}
