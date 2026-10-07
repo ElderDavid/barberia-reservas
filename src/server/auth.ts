@@ -3,6 +3,8 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { authEnv } from "../lib/env.ts";
 import { db } from "./db/client.ts";
 import { account, session, user, verification } from "./db/schema.ts";
+import { resetPasswordMail, sendMail } from "./mail.ts";
+import { getShopInfo } from "./shop.ts";
 
 const env = authEnv();
 
@@ -14,7 +16,17 @@ export const auth = betterAuth({
     provider: "pg",
     schema: { user, session, account, verification },
   }),
-  emailAndPassword: { enabled: true, minPasswordLength: 10 },
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 10,
+    resetPasswordTokenExpiresIn: 60 * 60,
+    revokeSessionsOnPasswordReset: true,
+    sendResetPassword: async ({ user, token }) => {
+      const link = `${env.APP_URL}/restablecer?token=${encodeURIComponent(token)}`;
+      const shopName = (await getShopInfo()).name;
+      await sendMail({ to: user.email, ...resetPasswordMail(user.name, link, shopName) });
+    },
+  },
   user: {
     additionalFields: {
       // input: false → the sign-up and update endpoints ignore it; only the owner script sets it.
