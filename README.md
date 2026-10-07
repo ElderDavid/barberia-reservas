@@ -45,7 +45,9 @@ pnpm db:seed            # carga datos de ejemplo y la cuenta del dueño
 pnpm dev                # abre la app en http://localhost:3000
 ```
 
-La cuenta del dueño usa `OWNER_EMAIL` y `OWNER_PASSWORD` de tu archivo `.env`.
+La cuenta del dueño usa `OWNER_EMAIL` y `OWNER_PASSWORD` de tu archivo `.env`. En producción
+se toman de las variables de Vercel: cada publicación crea la cuenta o, si ya existe, le pone el
+nombre, el correo y la contraseña que digan `OWNER_NAME`, `OWNER_EMAIL` y `OWNER_PASSWORD`.
 
 ## Comandos útiles
 

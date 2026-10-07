@@ -74,13 +74,13 @@ describe("deploy hardening", () => {
     expect((await statusOf(live)).status).toBe("held");
   });
 
-  it("schedules the cron and migrates only on production builds", () => {
+  it("schedules the cron and migrates and syncs the owner only on production builds", () => {
     const vercel = JSON.parse(readFileSync("vercel.json", "utf8"));
     expect(vercel.crons).toContainEqual(
       expect.objectContaining({ path: "/api/cron/expire-holds" }),
     );
     expect(vercel.buildCommand).toMatch(
-      /if \[ "\$VERCEL_ENV" = "production" \]; then pnpm db:migrate; fi/,
+      /^if \[ "\$VERCEL_ENV" = "production" \]; then pnpm db:migrate && if \[ -n "\$OWNER_EMAIL" \]; then pnpm owner:create; fi; fi && pnpm build$/,
     );
   });
 
