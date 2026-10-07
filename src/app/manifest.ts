@@ -1,14 +1,20 @@
 import type { MetadataRoute } from "next";
+import { appNames } from "@/lib/app-names";
+import { getShopInfo } from "@/server/shop";
+
+export const dynamic = "force-dynamic";
 
 /**
  * Web app manifest. Besides installing from the browser, it is what PWABuilder / Bubblewrap read
- * to package the site as the Android app for Google Play (see docs/play-store.md).
+ * to package the site as the Android app for Google Play (see docs/play-store.md). The app is
+ * named after the shop (Ajustes), so the Play package picks up the real name.
  */
-export default function manifest(): MetadataRoute.Manifest {
+export default async function manifest(): Promise<MetadataRoute.Manifest> {
+  const { name, shortName } = appNames((await getShopInfo()).name);
   return {
     id: "/",
-    name: "Barbería — Reservas",
-    short_name: "Barbería",
+    name,
+    short_name: shortName,
     description: "Reserva tu cita en la barbería desde el celular.",
     start_url: "/",
     scope: "/",
