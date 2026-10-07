@@ -52,7 +52,10 @@ export async function listReviews(filter: ReviewFilter): Promise<OwnerReview[]> 
 
 /** Visible reviews still waiting for the owner's answer, for the agenda notice. */
 export async function countUnanswered(): Promise<number> {
-  const [row] = await db.select({ count: sql<number>`count(*)::int` }).from(reviews).where(unanswered);
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(reviews)
+    .where(unanswered);
   return row.count;
 }
 

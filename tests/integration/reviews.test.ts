@@ -55,9 +55,9 @@ describe("customer reviews", () => {
 
   it("rates an attended booking of the account and edits it before a reply", async () => {
     await complete(bookingId);
-    expect(await saveReview(ana, { bookingId, rating: "5", comment: "  Excelente  " }, now)).toEqual(
-      { ok: true },
-    );
+    expect(
+      await saveReview(ana, { bookingId, rating: "5", comment: "  Excelente  " }, now),
+    ).toEqual({ ok: true });
     expect(await getAccountReview(ana, bookingId)).toMatchObject({
       rating: 5,
       comment: "Excelente",

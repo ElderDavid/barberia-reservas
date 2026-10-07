@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Stars } from "@/components/site/reviews/stars";
 import { Icon } from "@/components/ui/icon";
 import { formatCop } from "@/lib/money";
 import { formatDateTime } from "@/lib/time";
@@ -12,6 +13,7 @@ type Item = {
   serviceName: string;
   barberName: string;
   priceCop: number;
+  rating: number | null;
 };
 
 type Props = {
@@ -102,10 +104,21 @@ export function AccountBookings({ tab, lists, visits, timeZone }: Props) {
                     <span className="block text-sm text-fg-muted first-letter:uppercase">
                       {formatDateTime(item.startsAt, timeZone)} · {formatCop(item.priceCop)}
                     </span>
-                    <span
-                      className={`mt-2 inline-block rounded-control border px-2 py-0.5 text-xs ${status.tone}`}
-                    >
-                      {status.label}
+                    <span className="mt-2 flex flex-wrap items-center gap-3">
+                      <span
+                        className={`inline-block rounded-control border px-2 py-0.5 text-xs ${status.tone}`}
+                      >
+                        {status.label}
+                      </span>
+                      {item.status === "completed" ? (
+                        item.rating ? (
+                          <Stars rating={item.rating} size="sm" />
+                        ) : (
+                          <span className="text-sm font-medium underline underline-offset-4">
+                            Calificar
+                          </span>
+                        )
+                      ) : null}
                     </span>
                   </span>
                   <Icon name="chevron" className="size-5 shrink-0 text-fg-muted" />

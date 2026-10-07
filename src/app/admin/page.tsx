@@ -5,6 +5,7 @@ import { legalGaps } from "@/lib/legal";
 import { formatCop } from "@/lib/money";
 import { addDays, formatDateTime, formatTime, localDay } from "@/lib/time";
 import { type AgendaItem, getAgenda, getShopTimeZone } from "@/server/admin/agenda";
+import { countUnanswered } from "@/server/admin/reviews";
 import { getLegalInfo } from "@/server/shop";
 import { cancelarComoDueno, cobrar, marcarNoVino, reprogramarComoDueno } from "./actions";
 
@@ -61,6 +62,7 @@ export default async function AdminAgendaPage({
   const error = params.error ? (ERRORS[params.error] ?? "No se pudo completar la acción.") : null;
   const empty = agenda.groups.every((group) => group.items.length === 0);
   const gaps = legalGaps(await getLegalInfo());
+  const unanswered = await countUnanswered();
 
   return (
     <section className="space-y-4">
@@ -72,6 +74,14 @@ export default async function AdminAgendaPage({
             Complétalos en Ajustes
           </Link>
           .
+        </p>
+      ) : null}
+      {unanswered > 0 ? (
+        <p role="status" className="rounded-card border border-border bg-surface p-4">
+          {unanswered === 1 ? "1 opinión espera" : `${unanswered} opiniones esperan`} tu respuesta.{" "}
+          <Link href="/admin/opiniones?filtro=sin-responder" className="underline">
+            Ver opiniones
+          </Link>
         </p>
       ) : null}
       <div className="flex flex-wrap items-center gap-2">
