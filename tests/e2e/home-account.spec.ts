@@ -8,7 +8,7 @@ async function step(page: Page, name: string) {
 
 async function register(page: Page) {
   await page.goto("/registro");
-  await page.getByLabel("Nombre").fill("Mateo Díaz");
+  await page.getByLabel("Nombre").fill("Tomás Ruiz");
   await page.getByLabel("Correo").fill(`inicio-${Date.now()}@example.com`);
   await page.getByLabel("Celular").fill("3105550302");
   await page.getByLabel("Contraseña").fill("clave-cliente-123");
@@ -43,7 +43,7 @@ test("Inicio greets a signed-in customer with their next booking", async ({ page
   await register(page);
 
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1, name: "Hola, Mateo" })).toBeVisible(slow);
+  await expect(page.getByRole("heading", { level: 1, name: "Hola, Tomás" })).toBeVisible(slow);
   await expect(page.getByText("No tienes citas próximas.")).toBeVisible();
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
 

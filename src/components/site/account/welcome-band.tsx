@@ -101,7 +101,7 @@ export function WelcomeBand({ firstName, next, loyalty, timeZone }: Props) {
                       // biome-ignore lint/suspicious/noArrayIndexKey: the dots are positions, not items.
                       key={i}
                       className={`size-4 rounded-full ${
-                        i < loyalty.onCard ? "bg-cocoa" : "border border-dashed border-border"
+                        i < loyalty.onCard ? "bg-primary" : "border border-dashed border-border"
                       }`}
                     />
                   ))}

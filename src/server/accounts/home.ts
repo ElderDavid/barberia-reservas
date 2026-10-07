@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, inArray } from "drizzle-orm";
+import { and, asc, eq, gt, gte, or } from "drizzle-orm";
 import { db } from "../db/client.ts";
 import { barbers, bookings, services, user } from "../db/schema.ts";
 import { getLoyalty, type Loyalty } from "../loyalty.ts";
@@ -31,7 +31,11 @@ export async function getAccountHome(userId: string, now: Date): Promise<Account
     .where(
       and(
         eq(bookings.userId, userId),
-        inArray(bookings.status, ["held", "confirmed"]),
+        // A transfer hold counts only while its payment window is open.
+        or(
+          eq(bookings.status, "confirmed"),
+          and(eq(bookings.status, "held"), gt(bookings.holdExpiresAt, now)),
+        ),
         gte(bookings.startsAt, now),
       ),
     )

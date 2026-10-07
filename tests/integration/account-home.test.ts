@@ -71,6 +71,15 @@ describe("account home", () => {
     expect((await getAccountHome(ana, now))?.next).toBeNull();
   });
 
+  it("skips a transfer hold whose payment window has closed, keeps an open one", async () => {
+    const expired = await book("2026-10-12T15:00:00.000Z", ana);
+    await sql`update bookings set status = 'held', hold_expires_at = ${new Date("2026-10-07T16:45:00Z")} where id = ${expired}`;
+    expect((await getAccountHome(ana, now))?.next).toBeNull();
+    const open = await book("2026-10-13T15:00:00.000Z", ana);
+    await sql`update bookings set status = 'held', hold_expires_at = ${new Date("2026-10-07T17:10:00Z")} where id = ${open}`;
+    expect((await getAccountHome(ana, now))?.next).toMatchObject({ id: open, status: "held" });
+  });
+
   it("carries the same loyalty card as Cuenta", async () => {
     await book("2026-10-02T15:00:00.000Z", ana, "completed");
     expect((await getAccountHome(ana, now))?.loyalty).toEqual(await getLoyalty(ana));
