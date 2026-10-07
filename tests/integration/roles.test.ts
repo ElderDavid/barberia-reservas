@@ -62,4 +62,22 @@ describe("customer accounts and roles", () => {
       error: "invalid_input",
     });
   });
+
+  it("refuses sign-up through the public auth endpoint, which records no consent", async () => {
+    const response = await auth.handler(
+      new Request(`${process.env.APP_URL}/api/auth/sign-up/email`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: String(process.env.APP_URL) },
+        body: JSON.stringify({
+          name: "Bot",
+          email: "bot@example.com",
+          password: "clave-del-bot-1",
+          phone: "lo que sea",
+        }),
+      }),
+    );
+    expect(response.status).toBe(403);
+    const [row] = await sql<{ n: number }[]>`select count(*)::int as n from "user"`;
+    expect(row.n).toBe(0);
+  });
 });

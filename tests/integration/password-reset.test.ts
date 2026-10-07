@@ -31,7 +31,7 @@ describe("password reset", () => {
   it("sends nothing for an unknown email but answers the same", async () => {
     const fetchImpl = vi.fn(async () => new Response("{}", { status: 200 }));
     vi.stubGlobal("fetch", fetchImpl);
-    expect(await requestPasswordReset("nadie@example.com")).toEqual({ ok: true });
+    expect(await requestPasswordReset("nadie@example.com", now)).toEqual({ ok: true });
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
@@ -40,7 +40,7 @@ describe("password reset", () => {
     await auth.api.signInEmail({ body: { email: ana.email, password: ana.password } });
     const fetchImpl = vi.fn(async () => new Response("{}", { status: 200 }));
     vi.stubGlobal("fetch", fetchImpl);
-    expect(await requestPasswordReset(ana.email)).toEqual({ ok: true });
+    expect(await requestPasswordReset(ana.email, now)).toEqual({ ok: true });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     const body = JSON.parse(
       String((fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1].body),
@@ -69,10 +69,26 @@ describe("password reset", () => {
     });
   });
 
+  it("sends at most one mail per minute and three per hour to the same account", async () => {
+    await signUpCustomer(ana, now);
+    const fetchImpl = vi.fn(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchImpl);
+    const at = (minutes: number) => new Date(now.getTime() + minutes * 60_000);
+    for (const minute of [0, 0.5, 2, 4, 6]) {
+      expect(await requestPasswordReset(ana.email, at(minute))).toEqual({ ok: true });
+      // better-auth stamps rows with the real clock; move the new one to the simulated time.
+      await sql`update verification set created_at = ${at(minute)} where created_at > ${at(10)}`;
+    }
+    expect(fetchImpl).toHaveBeenCalledTimes(3); // minutes 0, 2 and 4
+  });
+
   it("is unavailable without a mail key", async () => {
     vi.stubEnv("RESEND_API_KEY", "");
     const fetchImpl = vi.fn();
     vi.stubGlobal("fetch", fetchImpl);
-    expect(await requestPasswordReset(ana.email)).toEqual({ ok: false, error: "mail_disabled" });
+    expect(await requestPasswordReset(ana.email, now)).toEqual({
+      ok: false,
+      error: "mail_disabled",
+    });
   });
 });

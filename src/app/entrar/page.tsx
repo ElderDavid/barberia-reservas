@@ -7,13 +7,9 @@ import { type FormEvent, useEffect, useState } from "react";
 import { AppTabBar } from "@/components/site/app-tab-bar";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
+import { safeReturnPath } from "@/lib/return-path";
 
 const authClient = createAuthClient();
-
-/** Only same-site paths, so a crafted link cannot send people elsewhere after signing in. */
-function safeReturn(value: string | null): string {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : "/cuenta";
-}
 
 export default function EntrarPage() {
   const router = useRouter();
@@ -45,7 +41,7 @@ export default function EntrarPage() {
     }
     const role = (data.user as { role?: string }).role;
     const volver = new URLSearchParams(window.location.search).get("volver");
-    router.push(role === "owner" ? "/admin" : safeReturn(volver));
+    router.push(role === "owner" ? "/admin" : safeReturnPath(volver));
     router.refresh();
   }
 
