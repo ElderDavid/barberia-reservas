@@ -6,17 +6,19 @@ que se publica en la web aparece en la app sin subir una versión nueva a Play.
 
 ## Lo que ya está listo en el código
 
-- `src/app/manifest.ts`: nombre, ícono normal y *maskable*, color, orientación vertical y accesos
+- `src/app/manifest.ts`: nombre (sale del nombre de la barbería en Admin › Ajustes), ícono normal y *maskable*, color, orientación vertical y accesos
   directos ("Reservar cita", "Mis citas").
 - `public/sw.js`: service worker que muestra `/sin-conexion` si se abre la app sin internet.
 - `/.well-known/assetlinks.json`: prueba a Android que la app y la web son del mismo dueño. Sale
   de las variables `ANDROID_PACKAGE_NAME` y `ANDROID_CERT_SHA256`; sin ellas lista `[]`.
-- Barra de pestañas inferior en el celular (Inicio, Reservar, Mis citas, Barberos).
+- Barra de pestañas inferior en el celular (Inicio, Reservar, Mis citas, Cuenta).
 
 ## Pasos (en orden)
 
-1. **Publicar la web** con dominio propio y HTTPS (Vercel + Supabase, ver README). La app
-   no funciona sin la web en línea.
+1. **Publicar la web** con HTTPS (Vercel + Supabase, ver README). La app no funciona sin la web
+   en línea. Sirve la dirección `*.vercel.app`; un dominio propio se ve mejor, pero si se cambia
+   después hay que subir una versión nueva de la app. Antes de empaquetar, revisar en
+   Admin › Ajustes el nombre de la barbería: es el nombre con el que se instala la app.
 2. **Crear la cuenta de desarrollador de Google Play** en <https://play.google.com/console>
    (pago único de 25 USD y verificación de identidad).
 3. **Generar el paquete Android** en <https://www.pwabuilder.com>:
