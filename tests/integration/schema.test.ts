@@ -19,6 +19,7 @@ const TABLES = [
   "expense_categories",
   "expenses",
   "consents",
+  "reviews",
 ];
 
 let shop: ShopFixture;

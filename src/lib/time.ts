@@ -114,6 +114,11 @@ export function formatDateTime(instant: Date, timeZone: string): string {
   }).format(instant);
 }
 
+/** e.g. "5 de octubre de 2026" */
+export function formatDate(instant: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("es-CO", { timeZone, dateStyle: "long" }).format(instant);
+}
+
 /** e.g. "9:00 a. m." */
 export function formatTime(instant: Date, timeZone: string): string {
   return new Intl.DateTimeFormat("es-CO", { timeZone, timeStyle: "short" }).format(instant);

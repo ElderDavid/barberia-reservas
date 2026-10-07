@@ -5,11 +5,13 @@ import { BOOKING_TITLES, manageProps } from "@/app/cita/manage-props";
 import { AppTabBar } from "@/components/site/app-tab-bar";
 import { BookingManage } from "@/components/site/booking/booking-manage";
 import { PageBanner } from "@/components/site/page-banner";
+import { VisitReview } from "@/components/site/reviews/visit-review";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { Icon } from "@/components/ui/icon";
 import { PHOTOS } from "@/lib/photos";
 import { findAccountBooking } from "@/server/accounts/bookings";
+import { getAccountReview } from "@/server/accounts/reviews";
 import { requireCustomer } from "@/server/session";
 import { getShopInfo, whatsappUrl } from "@/server/shop";
 
@@ -22,13 +24,15 @@ export default async function CitaDeLaCuentaPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ dia?: string; error?: string }>;
+  searchParams: Promise<{ dia?: string; error?: string; calificada?: string }>;
 }) {
   const { id } = await params;
   const user = await requireCustomer(`/mis-citas/${encodeURIComponent(id)}`);
   const view = await findAccountBooking(user.id, id);
   if (!view) notFound();
-  const { dia, error } = await searchParams;
+  const { dia, error, calificada } = await searchParams;
+  const completed = view.booking.status === "completed";
+  const review = completed ? await getAccountReview(user.id, view.booking.id) : null;
   const info = await getShopInfo();
   const whatsappHref = info.whatsappPhone ? whatsappUrl(info.whatsappPhone) : undefined;
   const props = await manageProps(view, {
@@ -61,6 +65,15 @@ export default async function CitaDeLaCuentaPage({
             <Icon name="back" className="size-4" />
             Mis citas
           </Link>
+          {completed ? (
+            <div className="mt-4">
+              <VisitReview
+                bookingId={view.booking.id}
+                review={review}
+                justSaved={calificada === "1"}
+              />
+            </div>
+          ) : null}
         </div>
         <BookingManage {...props} />
       </main>
