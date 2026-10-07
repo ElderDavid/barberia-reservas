@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { saveReview } from "../../src/server/accounts/reviews.ts";
 import { signUpCustomer } from "../../src/server/accounts/sign-up.ts";
-import { getClient, listClients } from "../../src/server/admin/clients.ts";
+import { clientAccount, getClient, listClients } from "../../src/server/admin/clients.ts";
 import { updateLoyaltySettings } from "../../src/server/admin/settings.ts";
 import { createBooking } from "../../src/server/booking/create.ts";
 import { sql, truncateAll } from "../setup/db.ts";
@@ -84,6 +84,18 @@ describe("owner's client list", () => {
     expect(pedro).toMatchObject({ visits: 1, userId: null, stamps: null, averageGiven: null });
     // The seeded customer never came, so they sort last.
     expect(rows.at(-1)?.name).toBe("Cliente Prueba");
+  });
+
+  it("shows no stamps while the loyalty card is off", async () => {
+    await updateLoyaltySettings({ goal: 0, reward: "Corte gratis" });
+    const rows = await listClients("ana");
+    expect(rows[0]).toMatchObject({ userId: ana, stamps: null });
+  });
+
+  it("finds the account behind a client on the server", async () => {
+    expect(await clientAccount(await customerId("3101112233"))).toBe(ana);
+    expect(await clientAccount(await customerId("3209998877"))).toBeNull();
+    expect(await clientAccount("nope")).toBeNull();
   });
 
   it("searches by name or phone, literally", async () => {

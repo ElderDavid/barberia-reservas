@@ -1,7 +1,15 @@
-import { asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "../db/client.ts";
-import { barbers, bookings, customers, reviews, services } from "../db/schema.ts";
+import {
+  barbers,
+  bookings,
+  customers,
+  loyaltyRedemptions,
+  reviews,
+  services,
+  shopSettings,
+} from "../db/schema.ts";
 import { getLoyalty, type Loyalty } from "../loyalty.ts";
 
 export type ClientRow = {
@@ -70,13 +78,45 @@ function likePattern(text: string): string {
   return `%${text.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 }
 
+/** Available stamps for every listed account in one query; null when loyalty is off. */
 async function withStamps(rows: Omit<ClientRow, "stamps">[]): Promise<ClientRow[]> {
-  return Promise.all(
-    rows.map(async (row) => ({
-      ...row,
-      stamps: row.userId ? (await getLoyalty(row.userId)).available : null,
-    })),
-  );
+  const [settings] = await db
+    .select({ goal: shopSettings.loyaltyGoal })
+    .from(shopSettings)
+    .where(eq(shopSettings.id, 1));
+  const ids = [...new Set(rows.flatMap((row) => (row.userId ? [row.userId] : [])))];
+  const stamps = new Map<string, number>();
+  if ((settings?.goal ?? 10) > 0 && ids.length > 0) {
+    const earned = await db
+      .select({ userId: bookings.userId, n: sql<number>`count(*)::int` })
+      .from(bookings)
+      .where(and(inArray(bookings.userId, ids), eq(bookings.status, "completed")))
+      .groupBy(bookings.userId);
+    const used = await db
+      .select({
+        userId: loyaltyRedemptions.userId,
+        n: sql<number>`sum(${loyaltyRedemptions.stampsUsed})::int`,
+      })
+      .from(loyaltyRedemptions)
+      .where(inArray(loyaltyRedemptions.userId, ids))
+      .groupBy(loyaltyRedemptions.userId);
+    const spent = new Map(used.map((row) => [row.userId, row.n]));
+    for (const id of ids) stamps.set(id, 0);
+    for (const row of earned) {
+      if (row.userId) stamps.set(row.userId, Math.max(row.n - (spent.get(row.userId) ?? 0), 0));
+    }
+  }
+  return rows.map((row) => ({
+    ...row,
+    stamps: row.userId ? (stamps.get(row.userId) ?? null) : null,
+  }));
+}
+
+/** The account a client's loyalty belongs to: the one on their most recent linked booking. */
+export async function clientAccount(customerId: string): Promise<string | null> {
+  if (!z.uuid().safeParse(customerId).success) return null;
+  const [row] = await db.select({ userId }).from(customers).where(eq(customers.id, customerId));
+  return row?.userId ?? null;
 }
 
 /** Everyone who has booked, most recent visit first, optionally filtered by name or phone. */

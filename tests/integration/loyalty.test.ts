@@ -53,6 +53,10 @@ describe("loyalty card", () => {
     ana = signed.userId;
   });
 
+  it("offers a free cut by default, worded to read after '¡Ganaste'", async () => {
+    expect((await getLoyalty(ana)).reward).toBe("Un corte gratis");
+  });
+
   it("counts only the account's attended visits", async () => {
     await updateLoyaltySettings({ goal: 3, reward: "Corte gratis" });
     await visit();

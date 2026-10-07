@@ -139,7 +139,7 @@ export default async function AjustesPage({
 
       <LoyaltySettings
         goal={shop?.loyaltyGoal ?? 10}
-        reward={shop?.loyaltyReward ?? "Corte gratis"}
+        reward={shop?.loyaltyReward ?? "Un corte gratis"}
       />
 
       <Card title="Servicios y precios">

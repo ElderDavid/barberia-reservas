@@ -26,7 +26,7 @@ export function LoyaltySettings({ goal, reward }: { goal: number; reward: string
           name="premio"
           maxLength={60}
           defaultValue={reward}
-          hint="Por ejemplo: Corte gratis"
+          hint="Se lee después de «¡Ganaste…!», por ejemplo: Un corte gratis"
           required
         />
         <Button type="submit">Guardar fidelidad</Button>

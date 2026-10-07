@@ -21,7 +21,8 @@ const STATUS: Record<string, string> = {
 };
 
 const ERRORS: Record<string, string> = {
-  not_enough: "Este cliente todavía no completa la tarjeta.",
+  not_enough:
+    "La tarjeta no está completa. Si acabas de tocar Canjear premio, el premio ya quedó registrado.",
   disabled: "La tarjeta de fidelidad está apagada en Ajustes.",
   not_found: "Este cliente ya no tiene cuenta.",
   invalid_input: "No se pudo canjear el premio.",
@@ -82,7 +83,6 @@ export default async function AdminClientePage({
           {loyalty.full ? (
             <form action={canjearPremio} className="mt-4 space-y-2">
               <input type="hidden" name="clientId" value={client.id} />
-              <input type="hidden" name="userId" value={client.userId ?? ""} />
               <p>
                 Completó la tarjeta: le corresponde {loyalty.reward.toLocaleLowerCase("es-CO")}.
               </p>

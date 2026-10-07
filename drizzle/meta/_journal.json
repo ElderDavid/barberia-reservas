@@ -64,6 +64,20 @@
       "when": 1791409938148,
       "tag": "0008_loyalty_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791410769422,
+      "tag": "0009_sticky_molly_hayes",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791410770644,
+      "tag": "0010_loyalty_reward_article",
+      "breakpoints": true
     }
   ]
 }

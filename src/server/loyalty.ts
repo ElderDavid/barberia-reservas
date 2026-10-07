@@ -30,7 +30,7 @@ async function settings(tx: Reader): Promise<{ goal: number; reward: string }> {
     .select({ goal: shopSettings.loyaltyGoal, reward: shopSettings.loyaltyReward })
     .from(shopSettings)
     .where(eq(shopSettings.id, 1));
-  return row ?? { goal: 10, reward: "Corte gratis" };
+  return row ?? { goal: 10, reward: "Un corte gratis" };
 }
 
 async function stamps(tx: Reader, userId: string): Promise<{ earned: number; used: number }> {

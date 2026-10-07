@@ -61,13 +61,13 @@ test("a full loyalty card is shown to the customer and redeemed by the owner", a
   const owner = await ownerPage(browser);
   await owner.goto("/admin/ajustes");
   await owner.getByLabel("Sellos para el premio").fill("1");
-  await owner.getByLabel("Premio", { exact: true }).fill("Corte gratis");
+  await owner.getByLabel("Premio", { exact: true }).fill("Un corte gratis");
   await owner.getByRole("button", { name: "Guardar fidelidad" }).click();
   await expect(owner).toHaveURL(/ok=1/, slow);
 
   const day = await registerAndBook(page);
   await page.goto("/cuenta");
-  await expect(page.getByText("Te falta 1 visita para corte gratis.")).toBeVisible(slow);
+  await expect(page.getByText("Te falta 1 visita para un corte gratis.")).toBeVisible(slow);
 
   await owner.goto(`/admin?dia=${day}`);
   await owner
@@ -79,7 +79,7 @@ test("a full loyalty card is shown to the customer and redeemed by the owner", a
 
   await page.reload();
   await expect(
-    page.getByText("¡Ganaste corte gratis! Muéstrale esta pantalla al barbero."),
+    page.getByText("¡Ganaste un corte gratis! Muéstrale esta pantalla al barbero."),
   ).toBeVisible(slow);
 
   await owner.goto("/admin/clientes");
@@ -92,5 +92,5 @@ test("a full loyalty card is shown to the customer and redeemed by the owner", a
   await expect(owner.getByRole("button", { name: "Canjear premio" })).toHaveCount(0);
 
   await page.reload();
-  await expect(page.getByText("Te falta 1 visita para corte gratis.")).toBeVisible(slow);
+  await expect(page.getByText("Te falta 1 visita para un corte gratis.")).toBeVisible(slow);
 });

@@ -135,7 +135,7 @@ export const shopSettings = pgTable(
     privacyEmail: text("privacy_email").notNull().default(""),
     // Loyalty card: attended visits needed for the reward (0 = off) and the reward's name.
     loyaltyGoal: smallint("loyalty_goal").notNull().default(10),
-    loyaltyReward: text("loyalty_reward").notNull().default("Corte gratis"),
+    loyaltyReward: text("loyalty_reward").notNull().default("Un corte gratis"),
     updatedAt: tstz("updated_at").notNull().defaultNow(),
   },
   (t) => [
