@@ -19,15 +19,22 @@ import {
 const tstz = (name: string) => timestamp(name, { withTimezone: true, mode: "date" });
 
 // ── better-auth core tables (field names are fixed by the library) ─────────────
-export const user = pgTable("user", {
-  id: text("id").primaryKey(),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").notNull().default(false),
-  image: text("image"),
-  createdAt: tstz("created_at").notNull().defaultNow(),
-  updatedAt: tstz("updated_at").notNull().defaultNow(),
-});
+// `role` and `phone` are additional fields declared in src/server/auth.ts.
+export const user = pgTable(
+  "user",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull().unique(),
+    emailVerified: boolean("email_verified").notNull().default(false),
+    image: text("image"),
+    role: text("role").notNull().default("customer"), // "owner" | "customer"
+    phone: text("phone"), // "57" + 10 digits
+    createdAt: tstz("created_at").notNull().defaultNow(),
+    updatedAt: tstz("updated_at").notNull().defaultNow(),
+  },
+  (t) => [check("user_role", sql`${t.role} in ('owner', 'customer')`)],
+);
 
 export const session = pgTable("session", {
   id: text("id").primaryKey(),
@@ -121,6 +128,11 @@ export const shopSettings = pgTable(
     slotIntervalMinutes: smallint("slot_interval_minutes").notNull().default(15),
     minNoticeMinutes: smallint("min_notice_minutes").notNull().default(60),
     maxAdvanceDays: smallint("max_advance_days").notNull().default(30),
+    // Responsible party for Ley 1581 (shown on /privacidad and /terminos).
+    legalName: text("legal_name").notNull().default(""),
+    legalIdType: text("legal_id_type").notNull().default(""), // "CC" | "NIT" | ""
+    legalIdNumber: text("legal_id_number").notNull().default(""),
+    privacyEmail: text("privacy_email").notNull().default(""),
     updatedAt: tstz("updated_at").notNull().defaultNow(),
   },
   (t) => [
@@ -312,5 +324,24 @@ export const expenses = pgTable(
   (t) => [
     check("expenses_amount", sql`${t.amountCop} > 0`),
     index("expenses_spent_on").on(t.spentOn),
+  ],
+);
+
+// ── data-processing authorizations (Ley 1581: proof of consent) ────────────────
+export const consents = pgTable(
+  "consents",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id").references(() => user.id, { onDelete: "cascade" }),
+    customerId: uuid("customer_id").references(() => customers.id, { onDelete: "set null" }),
+    kind: text("kind").notNull(), // "privacy" | "terms"
+    version: text("version").notNull(),
+    channel: text("channel").notNull(), // "registro" | "reserva" | "reacepta"
+    acceptedAt: tstz("accepted_at").notNull().defaultNow(),
+  },
+  (t) => [
+    check("consents_kind", sql`${t.kind} in ('privacy', 'terms')`),
+    check("consents_channel", sql`${t.channel} in ('registro', 'reserva', 'reacepta')`),
+    index("consents_user").on(t.userId),
   ],
 );
