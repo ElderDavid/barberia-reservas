@@ -74,7 +74,8 @@ Owner: `src/app/admin/**` (layout calls `requireOwner()`) → `src/app/admin/**/
 2. Always `import type` for type-only imports (`verbatimModuleSyntax` is on). No `enum`, no
    `namespace`, no constructor parameter properties — Node's type stripping rejects them.
 3. Server-first: pages are Server Components; `"use client"` only on a leaf that needs state or
-   browser APIs (today only `src/app/entrar/page.tsx`). Forms are plain `<form action={serverAction}>`;
+   browser APIs (today `src/app/entrar/page.tsx`, the service-worker registration, and the
+   "Mis citas" list/remember components, which use localStorage). Forms are plain `<form action={serverAction}>`;
    the action takes `(formData: FormData)` and on failure redirects back with `?error=<code>`, which
    the page renders as a Spanish message in `role="alert"`.
 4. Every page or route handler that reads the database exports `export const dynamic = "force-dynamic";`.
@@ -120,6 +121,8 @@ to a barbershop. Tonal layers: Bone → Paper → Cocoa → Ink; no decorative h
   `.slow-zoom` and `.marquee-track` classes in `globals.css`.
 - Mobile-first; public pages are full-bleed bands with content max width 1152px (`max-w-6xl`),
   forms 768px (`max-w-3xl`), admin 1024px (`max-w-5xl`). Header and footer sit outside `<main>`.
+- On phones (below `md`) customer pages end with `<AppTabBar current=…>` (bottom tabs: Inicio,
+  Reservar, Mis citas, Barberos), outside `<main>`; the header hides its "Reservar" button there.
 
 ## Environment
 
@@ -134,6 +137,7 @@ to a barbershop. Tonal layers: Bone → Paper → Cocoa → Ink; no decorative h
 | `WOMPI_EVENTS_SECRET` | 10 | `src/server/payments/webhook.ts` |
 | `CRON_SECRET` | 17 | `src/app/api/cron/expire-holds/route.ts` |
 | `MIGRATION_DATABASE_URL` | prod only | `drizzle.config.ts` |
+| `ANDROID_PACKAGE_NAME`, `ANDROID_CERT_SHA256` | optional | `/.well-known/assetlinks.json` (Play Store app, `docs/play-store.md`) |
 
 `.env.example` is committed and stays in sync; `.env` is created from it and never committed.
 

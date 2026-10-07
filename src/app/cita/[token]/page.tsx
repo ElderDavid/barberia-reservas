@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AppTabBar } from "@/components/site/app-tab-bar";
 import { PageBanner } from "@/components/site/page-banner";
+import { RememberBooking } from "@/components/site/remember-booking";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { Button } from "@/components/ui/button";
@@ -210,6 +212,12 @@ export default async function CitaPage({
         shopName={info.name}
         address={info.address || undefined}
         whatsappHref={whatsappHref}
+      />
+      <AppTabBar current="mis-citas" />
+      <RememberBooking
+        path={`/cita/${token}`}
+        title={`${service.name} con ${barber.name} · ${TITLES[booking.status] ?? "Tu cita"}`}
+        when={formatDateTime(booking.startsAt, shop.timezone)}
       />
     </>
   );

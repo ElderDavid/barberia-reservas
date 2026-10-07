@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond } from "next/font/google";
 import type { ReactNode } from "react";
+import { ServiceWorker } from "@/components/site/service-worker";
 import "./globals.css";
 
 const serif = Cormorant_Garamond({
@@ -16,6 +17,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#f2f1ed" },
     { media: "(prefers-color-scheme: dark)", color: "#0f0d0b" },
@@ -33,6 +35,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           Saltar al contenido
         </a>
         {children}
+        <ServiceWorker />
       </body>
     </html>
   );

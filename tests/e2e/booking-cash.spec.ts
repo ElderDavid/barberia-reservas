@@ -37,6 +37,15 @@ test("customer books in cash and cancels from the booking page", async ({ page }
   await expect(page).toHaveURL(/\/cita\/[A-Za-z0-9_-]+$/, slow);
   await expect(page.getByRole("heading", { level: 1, name: "Cita confirmada" })).toBeVisible(slow);
 
+  // The phone remembers the booking, so "Mis citas" in the tab bar lists it.
+  await page
+    .getByRole("navigation", { name: "Navegación de la app" })
+    .getByRole("link", { name: "Mis citas" })
+    .click();
+  await heading(page, "Mis citas");
+  await page.getByRole("link", { name: /Corte clásico con .* · Cita confirmada/ }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Cita confirmada" })).toBeVisible(slow);
+
   await page.getByRole("button", { name: "Cancelar cita" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Cita cancelada" })).toBeVisible(slow);
 });
