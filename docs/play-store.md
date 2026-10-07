@@ -34,10 +34,26 @@ que se publica en la web aparece en la app sin subir una versión nueva a Play.
    - Comprobar: `https://<dominio>/.well-known/assetlinks.json` debe mostrar el paquete y las huellas.
 5. **Crear la app en Play Console**, subir el `.aab`, llenar la ficha (descripción, capturas,
    ícono 512×512, categoría *Estilo de vida*), la clasificación de contenido, la sección de
-   seguridad de los datos (se recoge nombre y celular para gestionar citas; no se comparten) y la
-   política de privacidad: `https://<dominio>/privacidad`.
+   seguridad de los datos (ver abajo), la política de privacidad `https://<dominio>/privacidad` y
+   la URL para borrar la cuenta `https://<dominio>/cuenta/borrar`.
 6. **Prueba cerrada**: las cuentas personales nuevas deben probar la app con al menos 12 personas
    durante 14 días antes de poder pedir la publicación en producción.
 7. **Pedir producción**. Google revisa la app (normalmente unos días).
 
 Si la app abre con la barra del navegador arriba, la huella o el paquete del paso 4 no coinciden.
+
+## Formulario "Seguridad de los datos" (Play Console)
+
+| Pregunta | Respuesta |
+|---|---|
+| ¿La app recoge o comparte datos del usuario? | Sí, los recoge; no los comparte con terceros (los encargados que procesan por cuenta nuestra no cuentan como "compartir"). |
+| ¿Datos cifrados en tránsito? | Sí (HTTPS). |
+| ¿El usuario puede pedir que se borren? | Sí: en la app (Cuenta › Borrar mi cuenta) y en `/cuenta/borrar`. |
+| Información personal | Nombre, correo, número de teléfono. Recogidos, obligatorios para la cuenta. Finalidad: funcionalidad de la app y administración de la cuenta. |
+| Información financiera | Historial de compras (citas y pagos). Finalidad: funcionalidad de la app. Los datos de tarjeta los maneja Wompi, no la app. |
+| Actividad en la app | Otro contenido generado por el usuario (calificaciones y comentarios). Finalidad: funcionalidad de la app. |
+| Identificadores, ubicación, fotos, contactos, salud | No se recogen. |
+| Publicidad o analítica de terceros | No. |
+
+En la App Store (iPhone) las respuestas equivalentes van en "App Privacy": *Contact Info* (nombre,
+correo, teléfono) y *Purchases* y *User Content*, vinculados a la identidad, sin rastreo.

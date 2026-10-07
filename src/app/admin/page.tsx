@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { legalGaps } from "@/lib/legal";
 import { formatCop } from "@/lib/money";
 import { addDays, formatDateTime, formatTime, localDay } from "@/lib/time";
 import { type AgendaItem, getAgenda, getShopTimeZone } from "@/server/admin/agenda";
+import { getLegalInfo } from "@/server/shop";
 import { cancelarComoDueno, cobrar, marcarNoVino, reprogramarComoDueno } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -58,10 +60,20 @@ export default async function AdminAgendaPage({
   const agenda = await getAgenda(day);
   const error = params.error ? (ERRORS[params.error] ?? "No se pudo completar la acción.") : null;
   const empty = agenda.groups.every((group) => group.items.length === 0);
+  const gaps = legalGaps(await getLegalInfo());
 
   return (
     <section className="space-y-4">
       <h1 className="font-display text-4xl tracking-tight">Agenda</h1>
+      {gaps.length > 0 ? (
+        <p role="status" className="rounded-card border border-border bg-surface p-4">
+          Faltan datos en la política de datos y los términos: {gaps.join(", ")}.{" "}
+          <Link href="/admin/ajustes" className="underline">
+            Complétalos en Ajustes
+          </Link>
+          .
+        </p>
+      ) : null}
       <div className="flex flex-wrap items-center gap-2">
         <Link href={`/admin?dia=${addDays(day, -1)}`} className={navLink}>
           Anterior

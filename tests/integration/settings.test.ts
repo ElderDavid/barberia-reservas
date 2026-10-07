@@ -2,12 +2,14 @@ import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   setWorkingHours,
+  updateLegalInfo,
   updateShopSettings,
   upsertBarber,
   upsertService,
 } from "../../src/server/admin/settings.ts";
 import { getAvailability } from "../../src/server/booking/availability.ts";
 import { createBooking } from "../../src/server/booking/create.ts";
+import { getLegalInfo } from "../../src/server/shop.ts";
 import { sql, truncateAll } from "../setup/db.ts";
 import { type ShopFixture, seedShop } from "../setup/fixtures.ts";
 
@@ -140,7 +142,35 @@ describe("owner settings", () => {
   it("guards every settings action with requireOwner()", () => {
     const source = readFileSync("src/app/admin/ajustes/actions.ts", "utf8");
     const bodies = [...source.matchAll(/export async function \w+\([^)]*\)[^{]*\{\s*([^;]*;)/g)];
-    expect(bodies).toHaveLength(6);
+    expect(bodies).toHaveLength(7);
     for (const [, first] of bodies) expect(first.trim()).toBe("await requireOwner();");
+  });
+
+  it("saves the legal responsible party and rejects an unknown document type", async () => {
+    const legal = {
+      legalName: "Ana Gómez",
+      legalIdType: "CC",
+      legalIdNumber: "12345678",
+      privacyEmail: "datos@example.com",
+    };
+    expect(await updateLegalInfo({ ...legal, legalIdType: "RUT" })).toEqual({
+      ok: false,
+      error: "invalid_input",
+    });
+    expect(await updateLegalInfo({ ...legal, legalIdNumber: "12a" })).toEqual({
+      ok: false,
+      error: "invalid_input",
+    });
+    expect(await updateLegalInfo(legal)).toEqual({ ok: true });
+    expect(
+      await updateLegalInfo({ ...legal, legalIdType: "NIT", legalIdNumber: "900123456-7" }),
+    ).toEqual({ ok: true });
+    const info = await getLegalInfo();
+    expect(info).toMatchObject({
+      legalName: "Ana Gómez",
+      legalIdType: "NIT",
+      legalIdNumber: "900123456-7",
+      privacyEmail: "datos@example.com",
+    });
   });
 });

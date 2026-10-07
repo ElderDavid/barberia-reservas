@@ -7,6 +7,7 @@ import {
   agregarDiaLibre,
   guardarBarberia,
   guardarBarbero,
+  guardarDatosLegales,
   guardarServicio,
   quitarDiaLibre,
 } from "./actions";
@@ -82,6 +83,56 @@ export default async function AjustesPage({
             defaultValue={shop?.holdMinutes ?? 15}
           />
           <Button type="submit">Guardar</Button>
+        </form>
+      </Card>
+
+      <Card title="Datos legales">
+        <p className="mt-1 text-sm text-fg-muted">
+          Aparecen en la{" "}
+          <a href="/privacidad" className="underline">
+            política de datos
+          </a>{" "}
+          y en los{" "}
+          <a href="/terminos" className="underline">
+            términos
+          </a>
+          . Primero guarda los datos de la barbería.
+        </p>
+        <form action={guardarDatosLegales} className="mt-3 space-y-3">
+          <Field
+            label="Nombre del responsable o razón social"
+            name="responsable"
+            autoComplete="name"
+            defaultValue={shop?.legalName}
+            required
+          />
+          <label className="block space-y-1">
+            <span className="block font-medium">Tipo de documento</span>
+            <select
+              name="tipoDocumento"
+              defaultValue={shop?.legalIdType || "CC"}
+              className={control}
+            >
+              <option value="CC">Cédula de ciudadanía</option>
+              <option value="NIT">NIT</option>
+            </select>
+          </label>
+          <Field
+            label="Número de documento"
+            name="numeroDocumento"
+            inputMode="numeric"
+            defaultValue={shop?.legalIdNumber}
+            required
+          />
+          <Field
+            label="Correo para temas de datos personales"
+            name="correoDatos"
+            type="email"
+            autoComplete="email"
+            defaultValue={shop?.privacyEmail}
+            required
+          />
+          <Button type="submit">Guardar datos legales</Button>
         </form>
       </Card>
 

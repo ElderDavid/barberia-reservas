@@ -1,4 +1,5 @@
 import { asc, eq } from "drizzle-orm";
+import type { LegalInfo } from "../lib/legal.ts";
 import { db } from "./db/client.ts";
 import { barbers, services, shopSettings } from "./db/schema.ts";
 
@@ -50,4 +51,35 @@ export async function getPublicShop(): Promise<PublicShop> {
 /** WhatsApp click-to-chat link; wa.me wants digits only, with country code. */
 export function whatsappUrl(phone: string): string {
   return `https://wa.me/${phone.replace(/\D/g, "")}`;
+}
+
+/** Shop identity plus the responsible party's data, for /privacidad, /terminos and the panel. */
+export async function getLegalInfo(): Promise<LegalInfo> {
+  const [row] = await db
+    .select({
+      shopName: shopSettings.name,
+      address: shopSettings.address,
+      whatsappPhone: shopSettings.whatsappPhone,
+      legalName: shopSettings.legalName,
+      legalIdType: shopSettings.legalIdType,
+      legalIdNumber: shopSettings.legalIdNumber,
+      privacyEmail: shopSettings.privacyEmail,
+      cancelCutoffHours: shopSettings.selfServiceCutoffHours,
+    })
+    .from(shopSettings)
+    .where(eq(shopSettings.id, 1));
+  if (!row) {
+    return {
+      shopName: "Barbería",
+      address: "",
+      whatsappPhone: "",
+      legalName: "",
+      legalIdType: "",
+      legalIdNumber: "",
+      privacyEmail: "",
+      cancelCutoffHours: 4,
+    };
+  }
+  const idType = row.legalIdType === "CC" || row.legalIdType === "NIT" ? row.legalIdType : "";
+  return { ...row, legalIdType: idType };
 }
