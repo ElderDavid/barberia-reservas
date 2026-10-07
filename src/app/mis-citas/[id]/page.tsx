@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { BOOKING_TITLES, manageProps } from "@/app/cita/manage-props";
 import { AppTabBar } from "@/components/site/app-tab-bar";
 import { BookingManage } from "@/components/site/booking/booking-manage";
 import { PageBanner } from "@/components/site/page-banner";
@@ -11,7 +12,6 @@ import { PHOTOS } from "@/lib/photos";
 import { findAccountBooking } from "@/server/accounts/bookings";
 import { requireCustomer } from "@/server/session";
 import { getShopInfo, whatsappUrl } from "@/server/shop";
-import { BOOKING_TITLES, manageProps } from "../../cita/manage-props";
 
 export const dynamic = "force-dynamic";
 

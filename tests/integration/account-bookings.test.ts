@@ -158,4 +158,19 @@ describe("bookings linked to an account", () => {
     expect(await findAccountBooking(beto, own.bookingId)).toBeNull();
     expect(await findAccountBooking(ana, "no-es-un-uuid")).toBeNull();
   });
+
+  it("does not claim a booking that was replaced by a reschedule", async () => {
+    const ana = await customer("Ana", "ana@example.com");
+    const guest = await book("2026-10-12T15:00:00.000Z", "3001234567");
+    const moved = await rescheduleBooking({
+      bookingId: guest.bookingId,
+      newStartsAt: new Date("2026-10-12T17:00:00.000Z"),
+      actor: "owner",
+      now,
+      enforceCutoff: false,
+    });
+    expect(moved.ok).toBe(true);
+    expect(await claimBookings(ana, [guest.token], now)).toEqual({ ok: true, claimed: 0 });
+    expect(await userIdOf(guest.bookingId)).toBeNull();
+  });
 });

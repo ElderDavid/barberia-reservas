@@ -93,7 +93,7 @@ export function AccountBookings({ tab, lists, visits, timeZone }: Props) {
               <li key={item.id}>
                 <Link
                   href={`/mis-citas/${item.id}`}
-                  className="flex min-h-16 items-center gap-4 rounded-card border border-hairline bg-surface p-4 hover:border-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out active:scale-[0.98]"
+                  className="flex min-h-16 items-center gap-4 rounded-card border border-hairline bg-surface p-4 hover:border-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out motion-safe:active:scale-[0.98]"
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium">

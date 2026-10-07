@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { type BookingView, findById } from "../booking/manage.ts";
 import { hashToken } from "../booking/token.ts";
@@ -83,7 +83,14 @@ export async function claimBookings(
   const claimed = await db
     .update(bookings)
     .set({ userId, updatedAt: now })
-    .where(and(inArray(bookings.manageTokenHash, hashes), isNull(bookings.userId)))
+    .where(
+      and(
+        inArray(bookings.manageTokenHash, hashes),
+        isNull(bookings.userId),
+        // A rescheduled booking lives on as its replacement, which an old link cannot reach.
+        sql`${bookings.cancelReason} is distinct from 'reprogramada'`,
+      ),
+    )
     .returning({ id: bookings.id });
   return { ok: true, claimed: claimed.length };
 }

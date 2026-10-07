@@ -39,7 +39,8 @@ export default async function CitaPage({
     now: new Date(),
     viaLink: true,
   });
-  const canSave = user?.role === "customer" && booking.userId === null;
+  const canSave =
+    user?.role === "customer" && booking.userId === null && booking.cancelReason !== "reprogramada";
   const title = BOOKING_TITLES[booking.status] ?? "Tu cita";
 
   return (
