@@ -10,7 +10,7 @@ type Booking = typeof bookings.$inferSelect;
 type Actor = "customer" | "owner";
 
 export type ManageResult =
-  | { ok: true; token?: string }
+  | { ok: true; token?: string; bookingId?: string }
   | { ok: false; error: "not_found" | "invalid_state" | "cutoff_passed" | "slot_taken" };
 
 export type BookingView = {
@@ -144,6 +144,7 @@ export async function rescheduleBooking(input: {
   const blockedUntil = new Date(endsAt.getTime() + service.bufferAfterMinutes * MINUTE_MS);
   const paid = booking.depositStatus === "paid";
   const { token, hash } = newManageToken();
+  let newId = "";
 
   try {
     await db.transaction(async (tx) => {
@@ -160,22 +161,27 @@ export async function rescheduleBooking(input: {
         .where(eq(bookings.id, booking.id));
       await lockBarberSchedule(tx, barberId);
       try {
-        await tx.insert(bookings).values({
-          barberId,
-          serviceId: booking.serviceId,
-          customerId: booking.customerId,
-          startsAt: input.newStartsAt,
-          endsAt,
-          blockedFrom: input.newStartsAt,
-          blockedUntil,
-          status: "confirmed",
-          paymentMethod: booking.paymentMethod,
-          priceCop: booking.priceCop,
-          depositCop: paid ? booking.depositCop : 0,
-          depositStatus: paid ? "paid" : "none",
-          manageTokenHash: hash,
-          rescheduledFromId: booking.id,
-        });
+        const [inserted] = await tx
+          .insert(bookings)
+          .values({
+            barberId,
+            serviceId: booking.serviceId,
+            customerId: booking.customerId,
+            userId: booking.userId,
+            startsAt: input.newStartsAt,
+            endsAt,
+            blockedFrom: input.newStartsAt,
+            blockedUntil,
+            status: "confirmed",
+            paymentMethod: booking.paymentMethod,
+            priceCop: booking.priceCop,
+            depositCop: paid ? booking.depositCop : 0,
+            depositStatus: paid ? "paid" : "none",
+            manageTokenHash: hash,
+            rescheduledFromId: booking.id,
+          })
+          .returning({ id: bookings.id });
+        newId = inserted.id;
       } catch (error) {
         if (isExclusionViolation(error)) throw new SlotTaken();
         throw error;
@@ -185,7 +191,7 @@ export async function rescheduleBooking(input: {
     if (error instanceof SlotTaken) return { ok: false, error: "slot_taken" };
     throw error;
   }
-  return { ok: true, token };
+  return { ok: true, token, bookingId: newId };
 }
 
 /** Owner reschedule: no cutoff, no opening-hours check, may change barber; overlaps still fail. */

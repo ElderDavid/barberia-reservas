@@ -63,6 +63,7 @@ describe("customer account", () => {
         phone: "3001234567",
         consent: true,
         method: "cash",
+        userId: id,
       },
       now,
     );
@@ -74,10 +75,11 @@ describe("customer account", () => {
         (select count(*)::int from consents where user_id is not null) as consents
     `;
     expect(counts).toEqual({ users: 0, sessions: 0, consents: 0 });
-    const [booking] = await sql<{ customer_id: string | null }[]>`
-      select customer_id from bookings where id = ${booked.bookingId}
+    const [booking] = await sql<{ customer_id: string | null; user_id: string | null }[]>`
+      select customer_id, user_id from bookings where id = ${booked.bookingId}
     `;
     expect(booking.customer_id).toBeTruthy();
+    expect(booking.user_id).toBeNull();
   });
 
   it("refuses to delete the owner", async () => {

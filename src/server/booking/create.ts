@@ -15,6 +15,8 @@ export type CreateBookingInput = {
   phone: string; // as typed by the customer
   consent: boolean;
   method: "cash" | "transfer";
+  /** Signed-in customer's account; the booking then shows in their "Mis citas". */
+  userId?: string | null;
 };
 export type CreateBookingResult =
   | { ok: true; bookingId: string; token: string }
@@ -53,6 +55,7 @@ const inputSchema = z.object({
   }),
   consent: z.literal(true),
   method: z.enum(["cash", "transfer"]),
+  userId: z.string().min(1).max(64).nullish(),
 });
 
 function hasCode(error: unknown, code: string): boolean {
@@ -230,6 +233,7 @@ export async function createBooking(
                   barberId,
                   serviceId: service.id,
                   customerId: customer.id,
+                  userId: data.userId ?? null,
                   startsAt,
                   endsAt,
                   blockedFrom: startsAt,
