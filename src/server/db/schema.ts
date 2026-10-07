@@ -133,6 +133,9 @@ export const shopSettings = pgTable(
     legalIdType: text("legal_id_type").notNull().default(""), // "CC" | "NIT" | ""
     legalIdNumber: text("legal_id_number").notNull().default(""),
     privacyEmail: text("privacy_email").notNull().default(""),
+    // Loyalty card: attended visits needed for the reward (0 = off) and the reward's name.
+    loyaltyGoal: smallint("loyalty_goal").notNull().default(10),
+    loyaltyReward: text("loyalty_reward").notNull().default("Un corte gratis"),
     updatedAt: tstz("updated_at").notNull().defaultNow(),
   },
   (t) => [
@@ -140,6 +143,8 @@ export const shopSettings = pgTable(
     check("shop_settings_deposit_percent", sql`${t.depositPercent} between 10 and 100`),
     check("shop_settings_cutoff_hours", sql`${t.selfServiceCutoffHours} between 3 and 5`),
     check("shop_settings_hold_minutes", sql`${t.holdMinutes} between 10 and 30`),
+    check("shop_settings_loyalty_goal", sql`${t.loyaltyGoal} between 0 and 30`),
+    check("shop_settings_loyalty_reward", sql`char_length(${t.loyaltyReward}) between 1 and 60`),
   ],
 );
 
@@ -375,5 +380,23 @@ export const reviews = pgTable(
     check("reviews_owner_reply", sql`char_length(${t.ownerReply}) <= 500`),
     index("reviews_user").on(t.userId),
     index("reviews_created").on(t.createdAt),
+  ],
+);
+
+// ── loyalty: each redemption spends a full card of stamps ──────────────────────
+export const loyaltyRedemptions = pgTable(
+  "loyalty_redemptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    stampsUsed: smallint("stamps_used").notNull(),
+    redeemedAt: tstz("redeemed_at").notNull().defaultNow(),
+    redeemedBy: text("redeemed_by").references(() => user.id, { onDelete: "set null" }),
+  },
+  (t) => [
+    check("loyalty_redemptions_stamps", sql`${t.stampsUsed} between 1 and 30`),
+    index("loyalty_redemptions_user").on(t.userId),
   ],
 );

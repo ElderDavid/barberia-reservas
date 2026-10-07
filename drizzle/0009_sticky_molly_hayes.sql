@@ -1,0 +1,1 @@
+ALTER TABLE "shop_settings" ALTER COLUMN "loyalty_reward" SET DEFAULT 'Un corte gratis';

@@ -11,6 +11,7 @@ import {
   guardarServicio,
   quitarDiaLibre,
 } from "./actions";
+import { LoyaltySettings } from "./loyalty-settings";
 import { WeeklyHours } from "./weekly-hours";
 
 export const dynamic = "force-dynamic";
@@ -135,6 +136,11 @@ export default async function AjustesPage({
           <Button type="submit">Guardar datos legales</Button>
         </form>
       </Card>
+
+      <LoyaltySettings
+        goal={shop?.loyaltyGoal ?? 10}
+        reward={shop?.loyaltyReward ?? "Un corte gratis"}
+      />
 
       <Card title="Servicios y precios">
         {[...data.services, null].map((service) => (

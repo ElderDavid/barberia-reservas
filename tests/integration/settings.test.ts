@@ -142,7 +142,7 @@ describe("owner settings", () => {
   it("guards every settings action with requireOwner()", () => {
     const source = readFileSync("src/app/admin/ajustes/actions.ts", "utf8");
     const bodies = [...source.matchAll(/export async function \w+\([^)]*\)[^{]*\{\s*([^;]*;)/g)];
-    expect(bodies).toHaveLength(7);
+    expect(bodies).toHaveLength(8);
     for (const [, first] of bodies) expect(first.trim()).toBe("await requireOwner();");
   });
 

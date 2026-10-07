@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AccountSection } from "@/components/site/account/account-section";
+import { LoyaltyCard } from "@/components/site/account/loyalty-card";
 import { MemberCard } from "@/components/site/account/member-card";
 import { AppTabBar } from "@/components/site/app-tab-bar";
 import { SiteFooter } from "@/components/site/site-footer";
@@ -8,6 +9,7 @@ import { SiteHeader } from "@/components/site/site-header";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { getProfile } from "@/server/accounts/profile";
+import { getLoyalty } from "@/server/loyalty";
 import { requireCustomer } from "@/server/session";
 import { getShopInfo, whatsappUrl } from "@/server/shop";
 import { cambiarClave, guardarPerfil, salir } from "./actions";
@@ -36,10 +38,11 @@ type Props = { searchParams: Promise<{ ok?: string; error?: string; bienvenida?:
 
 export default async function CuentaPage({ searchParams }: Props) {
   const user = await requireCustomer();
-  const [{ ok, error, bienvenida }, profile, shop] = await Promise.all([
+  const [{ ok, error, bienvenida }, profile, shop, loyalty] = await Promise.all([
     searchParams,
     getProfile(user.id),
     getShopInfo(),
+    getLoyalty(user.id),
   ]);
   const whatsappHref = shop.whatsappPhone ? whatsappUrl(shop.whatsappPhone) : undefined;
   const name = profile?.name ?? user.name;
@@ -73,6 +76,12 @@ export default async function CuentaPage({ searchParams }: Props) {
             name={name}
             email={user.email}
             since={sinceFormat.format(profile?.createdAt ?? new Date())}
+          />
+          <LoyaltyCard
+            goal={loyalty.goal}
+            reward={loyalty.reward}
+            onCard={loyalty.onCard}
+            full={loyalty.full}
           />
           <div className="grid gap-6 md:grid-cols-2">
             <AccountSection title="Tus datos">

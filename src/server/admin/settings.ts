@@ -66,6 +66,29 @@ export async function updateLegalInfo(
   return updated.length > 0 ? { ok: true } : { ok: false, error: "not_found" };
 }
 
+const loyaltySchema = z.object({
+  goal: z.number().int().min(0).max(30),
+  reward: z.string().trim().min(1).max(60),
+});
+
+/** Stamps needed for the loyalty reward (0 turns the card off) and what the reward is. */
+export async function updateLoyaltySettings(
+  input: z.input<typeof loyaltySchema>,
+): Promise<SettingsResult> {
+  const parsed = loyaltySchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "invalid_input" };
+  const updated = await db
+    .update(shopSettings)
+    .set({
+      loyaltyGoal: parsed.data.goal,
+      loyaltyReward: parsed.data.reward,
+      updatedAt: new Date(),
+    })
+    .where(eq(shopSettings.id, 1))
+    .returning({ id: shopSettings.id });
+  return updated.length > 0 ? { ok: true } : { ok: false, error: "not_found" };
+}
+
 const serviceSchema = z.object({
   id: z.uuid().optional(),
   name: z.string().trim().min(2).max(60),
