@@ -41,7 +41,8 @@ Fecha: 2026-10-07 · Pedido por: AndroidProyect (dueño de BarberStore)
    calificar.
 4. El dueño ve en el panel la lista de clientes, sus visitas, sus calificaciones, responde
    comentarios y entrega el premio de fidelidad.
-5. Un cliente puede borrar su cuenta desde la app (Google Play lo exige).
+5. Un cliente puede borrar su cuenta desde la app (Google Play lo exige), descargar sus datos y
+   leer la política de datos y los términos, que aceptó al registrarse.
 6. Las citas que el cliente hizo sin cuenta desde ese mismo celular pasan a su cuenta al entrar.
 
 ## 2. Lo que ve el cliente
@@ -125,16 +126,56 @@ registro, `ensureOwner` no toca clientes, reservar con cuenta, reclamar con toke
 ajeno, repetido), calificar solo citas atendidas propias, sellos y canje, borrar cuenta.
 E2E (Pixel 7): registrarse → reservar → el dueño marca atendida → calificar → ver sello.
 
-## 5. Orden de entrega (un PR por paso, cada uno se publica solo)
+## 5. Parte legal (Colombia, Google Play y Apple)
 
-1. Roles, registro, entrar, recuperar clave, Cuenta y borrar cuenta (+ arreglo de `ensureOwner`).
+Pedido del dueño: "que no se te olvide poner las políticas y las leyes de uso de datos y toda la
+parte legal". Estos textos son una base escrita con cuidado, no asesoría jurídica; se recomienda
+que un abogado los revise antes de abrir el registro al público.
+
+**Páginas públicas** (enlazadas en el pie de página, en el registro y en Cuenta):
+
+| Página | Ruta | Contenido |
+|---|---|---|
+| Política de tratamiento de datos | `/privacidad` | Reescrita según la Ley 1581 de 2012 y el Decreto 1377 de 2013 (compilado en el Decreto 1074 de 2015): responsable (nombre, documento, dirección, correo y WhatsApp), datos que se recogen (nombre, celular, correo, citas, calificaciones, sellos; nada sensible), finalidades, derechos del titular (conocer, actualizar, rectificar, suprimir, revocar, pedir prueba de la autorización, quejarse ante la Superintendencia de Industria y Comercio), cómo ejercerlos y plazos (consultas 10 días hábiles, reclamos 15 días hábiles), encargados (Supabase, Vercel, Wompi, Resend) y transferencia internacional a sus servidores en EE. UU., seguridad, conservación (24 meses tras la última actividad; los registros contables, lo que pida la ley), menores (el registro es para mayores de 14; menores de 14 con autorización de su representante), cookies (solo la de sesión, necesaria), vigencia y fecha de la versión. |
+| Términos y condiciones de uso | `/terminos` | Quién presta el servicio, uso de la cuenta, reservas, depósitos y pagos con Wompi, cancelación y cambio hasta N horas antes (dato de Ajustes), inasistencias, reembolsos según la Ley 1480 de 2011 (Estatuto del Consumidor) y el derecho de retracto cuando aplique, reglas de las calificaciones (sin insultos ni datos de terceros; el dueño puede ocultar las que las incumplan), fidelidad (sin valor en dinero, no transferible, el dueño puede cambiar el premio avisando), comercio electrónico (Ley 527 de 1999), cierre de cuenta, ley aplicable y canal de PQR. |
+| Borrar cuenta | `/cuenta/borrar` | Instrucciones públicas para borrar la cuenta, como pide Google Play, y el botón para hacerlo si la sesión está abierta. |
+
+**Datos del responsable.** Nuevo bloque "Datos legales" en Ajustes del panel: nombre o razón
+social, tipo y número de documento (cédula o NIT), correo de contacto para datos personales.
+Las páginas legales los muestran. Mientras falten, dicen "por completar" y el panel avisa.
+
+**Autorización en el registro y al reservar.** Casilla sin marcar por defecto: "Autorizo el
+tratamiento de mis datos según la Política de tratamiento de datos y acepto los Términos". Se
+guarda prueba: fecha, versión de la política aceptada y canal (`registro` o `reserva`) en una
+tabla `consents` (`user_id` o `customer_id`, `kind`, `version`, `accepted_at`). Cuando la versión
+de la política cambia, al entrar se pide aceptar la nueva.
+
+**Derechos desde la app.** En Cuenta: editar datos (actualizar/rectificar), descargar mis datos
+(un archivo JSON con perfil, citas, calificaciones y sellos), borrar mi cuenta (suprimir) y un
+enlace para escribir a la barbería por consultas o reclamos.
+
+**Registro Nacional de Bases de Datos.** Solo obliga a sociedades y entidades con activos
+totales mayores a 100.000 UVT, así que una barbería pequeña normalmente no debe inscribirse. Se
+anota en la política para que el dueño lo confirme con su contador.
+
+**Tiendas de apps.** Google Play pide la URL de la política, la de borrar cuenta y el
+formulario de "Seguridad de los datos"; dejamos en `docs/play-store.md` qué marcar (datos
+recogidos: nombre, correo, teléfono, historial de compras; cifrados en tránsito; el usuario
+puede pedir borrarlos; no se comparten con fines publicitarios). Para iPhone, lo equivalente en
+"App Privacy".
+
+## 6. Orden de entrega (un PR por paso, cada uno se publica solo)
+
+1. Roles, registro, entrar, recuperar clave, Cuenta y borrar cuenta (+ arreglo de `ensureOwner`),
+   con la parte legal: política, términos, autorización guardada, datos legales en Ajustes,
+   descargar mis datos y la página pública para borrar cuenta.
 2. Citas en la cuenta: reservar con cuenta, Mis citas con pestañas, contador de visitas,
    reclamar citas guardadas.
 3. Calificaciones y respuestas del dueño, página del barbero con estrellas.
 4. Fidelidad y panel de Clientes.
 5. Pulido visual: Inicio con saludo y próxima cita, animaciones, revisión de accesibilidad.
 
-## 6. Fuera de esta versión
+## 7. Fuera de esta versión
 
 Chat, notificaciones push, Google/Apple, fotos del cliente, varios locales, puntos o dinero en
 la cuenta, pagos guardados.
