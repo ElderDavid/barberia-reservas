@@ -7,9 +7,9 @@ type HeroProps = { shopName: string; address?: string; whatsappHref?: string };
 export function Hero({ shopName, address, whatsappHref }: HeroProps) {
   const photo = PHOTOS.chair;
   return (
-    <section className="bg-ink text-on-ink">
-      <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-2 md:py-24">
-        <div className="space-y-6">
+    <section className="relative isolate overflow-hidden bg-ink text-on-ink">
+      <div className="mx-auto grid min-h-[78dvh] max-w-6xl items-end gap-10 px-4 py-14 md:min-h-0 md:grid-cols-2 md:items-center md:py-24">
+        <div className="relative z-10 space-y-6">
           <p className="rise text-xs uppercase tracking-[0.3em] text-on-ink-muted">
             Barbería · Tradición y oficio
           </p>
@@ -38,7 +38,8 @@ export function Hero({ shopName, address, whatsappHref }: HeroProps) {
           </div>
           {address ? <p className="text-sm text-on-ink-muted">{address}</p> : null}
         </div>
-        <div className="unveil relative aspect-[4/5] overflow-hidden rounded-card">
+        {/* On the phone the photo fills the band behind the text, like an app's welcome screen. */}
+        <div className="unveil absolute inset-0 -z-10 overflow-hidden md:relative md:inset-auto md:z-0 md:aspect-[4/5] md:rounded-card">
           <Image
             src={photoSrc(photo)}
             alt={photo.alt}
@@ -47,6 +48,7 @@ export function Hero({ shopName, address, whatsappHref }: HeroProps) {
             priority
             className="slow-zoom object-cover"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/85 to-ink/20 md:hidden" />
         </div>
       </div>
     </section>

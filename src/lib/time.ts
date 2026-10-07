@@ -118,3 +118,9 @@ export function formatDateTime(instant: Date, timeZone: string): string {
 export function formatTime(instant: Date, timeZone: string): string {
   return new Intl.DateTimeFormat("es-CO", { timeZone, timeStyle: "short" }).format(instant);
 }
+
+/** Minutes since local midnight of `instant` in `timeZone` (9:30 a. m. → 570). */
+export function localMinutes(instant: Date, timeZone: string): number {
+  const p = wallParts(instant, timeZone);
+  return p.hour * 60 + p.minute;
+}

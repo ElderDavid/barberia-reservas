@@ -1,3 +1,5 @@
+import { AppTabBar } from "@/components/site/app-tab-bar";
+import { Barbers } from "@/components/site/barbers";
 import { Gallery } from "@/components/site/gallery";
 import { Hero } from "@/components/site/hero";
 import { Marquee } from "@/components/site/marquee";
@@ -25,10 +27,12 @@ export default async function HomePage() {
         <Marquee items={[...new Set(marquee)]} />
         <Steps />
         <ServicesMenu services={shop.services} />
+        <Barbers barbers={shop.barbers} />
         <Gallery />
         <Visit address={address} whatsappHref={whatsappHref} />
       </main>
       <SiteFooter shopName={shop.name} address={address} whatsappHref={whatsappHref} />
+      <AppTabBar current="inicio" />
     </>
   );
 }

@@ -123,6 +123,15 @@ h3 {
   }
 }
 
+@keyframes pop {
+  from {
+    transform: scale(0.6);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
 @keyframes rise {
   from {
     transform: translateY(28px);

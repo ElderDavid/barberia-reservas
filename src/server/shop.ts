@@ -1,6 +1,6 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "./db/client.ts";
-import { services, shopSettings } from "./db/schema.ts";
+import { barbers, services, shopSettings } from "./db/schema.ts";
 
 export type ShopInfo = {
   name: string;
@@ -10,6 +10,7 @@ export type ShopInfo = {
 
 export type PublicShop = ShopInfo & {
   services: { id: string; name: string; durationMinutes: number; priceCop: number }[];
+  barbers: { id: string; name: string }[];
 };
 
 /** The shop's public identity, used on the home and privacy pages. */
@@ -25,7 +26,7 @@ export async function getShopInfo(): Promise<ShopInfo> {
   return row ?? { name: "Barbería", address: "", whatsappPhone: "" };
 }
 
-/** Shop identity plus active services in display order, for the public home page. */
+/** Shop identity plus active services and barbers in display order, for the public home page. */
 export async function getPublicShop(): Promise<PublicShop> {
   const info = await getShopInfo();
   const serviceRows = await db
@@ -38,7 +39,12 @@ export async function getPublicShop(): Promise<PublicShop> {
     .from(services)
     .where(eq(services.active, true))
     .orderBy(asc(services.sortOrder), asc(services.name));
-  return { ...info, services: serviceRows };
+  const barberRows = await db
+    .select({ id: barbers.id, name: barbers.name })
+    .from(barbers)
+    .where(eq(barbers.active, true))
+    .orderBy(asc(barbers.sortOrder), asc(barbers.name));
+  return { ...info, services: serviceRows, barbers: barberRows };
 }
 
 /** WhatsApp click-to-chat link; wa.me wants digits only, with country code. */

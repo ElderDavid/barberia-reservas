@@ -40,7 +40,7 @@ export function SiteHeader({ shopName, whatsappHref }: SiteHeaderProps) {
             <li>
               <Link
                 href="/reservar"
-                className="ml-2 inline-flex min-h-11 items-center rounded-control bg-primary px-4 text-sm font-medium text-primary-fg motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className="ml-2 hidden min-h-11 md:inline-flex items-center rounded-control bg-primary px-4 text-sm font-medium text-primary-fg motion-safe:transition-transform motion-safe:duration-150 motion-safe:ease-out hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               >
                 Reservar
               </Link>

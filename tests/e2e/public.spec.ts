@@ -12,14 +12,17 @@ test("the manifest describes an installable app", async ({ request }) => {
   expect(manifest.start_url).toBe("/");
   expect(manifest.display).toBe("standalone");
   expect(manifest.lang).toBe("es-CO");
+  expect(manifest.orientation).toBe("portrait");
   expect(manifest.icons.map((icon: { sizes: string }) => icon.sizes)).toEqual([
     "192x192",
     "512x512",
+    "512x512",
   ]);
+  expect(manifest.icons.map((icon: { purpose?: string }) => icon.purpose)).toContain("maskable");
 });
 
 test("icons are PNG images and unknown sizes are 404", async ({ request }) => {
-  for (const size of [192, 512]) {
+  for (const size of [192, 512, "maskable"]) {
     const response = await request.get(`/icons/${size}`);
     expect(response.status()).toBe(200);
     expect(response.headers()["content-type"]).toContain("image/png");
@@ -61,7 +64,7 @@ test("privacy page states the Ley 1581 rights", async ({ page }) => {
   await expect(page.getByText(/24 meses/)).toBeVisible();
 });
 
-for (const path of ["/", "/reservar", "/privacidad", "/entrar"]) {
+for (const path of ["/", "/reservar", "/privacidad", "/entrar", "/mis-citas", "/sin-conexion"]) {
   test(`no WCAG 2.2 AA violations on ${path}`, async ({ page }) => {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });
@@ -79,4 +82,26 @@ test("home does not scroll sideways at 320px", async ({ page }) => {
     clientWidth: document.documentElement.clientWidth,
   }));
   expect(scrollWidth).toBe(clientWidth);
+});
+
+test("assetlinks.json lists no app until the Play Store identity is configured", async ({
+  request,
+}) => {
+  const response = await request.get("/.well-known/assetlinks.json");
+  expect(response.status()).toBe(200);
+  expect(await response.json()).toEqual([]);
+});
+
+test("home shows the barbers and a bottom tab bar on the phone", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("heading", { name: "Nuestros barberos" })).toBeVisible({
+    timeout: 30_000,
+  });
+  const tabs = page.getByRole("navigation", { name: "Navegación de la app" });
+  await expect(tabs).toBeVisible();
+  await expect(tabs.getByRole("link", { name: "Inicio" })).toHaveAttribute("aria-current", "page");
+  await tabs.getByRole("link", { name: "Reservar" }).click();
+  await expect(page.getByRole("heading", { name: "Elige el servicio" })).toBeVisible({
+    timeout: 30_000,
+  });
 });

@@ -61,3 +61,17 @@ export function cronEnv(): z.infer<typeof cronSchema> {
   const result = cronSchema.safeParse(process.env);
   return result.success ? result.data : fail(result.error);
 }
+
+const androidSchema = z.object({
+  ANDROID_PACKAGE_NAME: z.string().regex(/^[a-zA-Z][\w]*(\.[a-zA-Z][\w]*)+$/),
+  ANDROID_CERT_SHA256: z.string().min(1),
+});
+
+/**
+ * The Play Store app's identity, for `/.well-known/assetlinks.json`. Optional: until the app
+ * exists this returns null and the file lists no app.
+ */
+export function androidEnv(): z.infer<typeof androidSchema> | null {
+  const result = androidSchema.safeParse(process.env);
+  return result.success ? result.data : null;
+}
