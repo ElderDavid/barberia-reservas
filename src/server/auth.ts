@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { nextCookies } from "better-auth/next-js";
 import { authEnv } from "../lib/env.ts";
 import { db } from "./db/client.ts";
 import { account, session, user, verification } from "./db/schema.ts";
@@ -35,4 +36,6 @@ export const auth = betterAuth({
     },
   },
   session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
+  // Lets server actions (sign-up, sign-out) set the session cookie; a no-op outside a request.
+  plugins: [nextCookies()],
 });

@@ -28,7 +28,6 @@ export default async function RestablecerPage({ searchParams }: Props) {
     <AuthShell
       shop={shop}
       whatsappHref={whatsappHref}
-      eyebrow="Tu cuenta"
       title="Nueva contraseña"
       intro={<p>Elige una contraseña de al menos 10 caracteres. El enlace dura una hora.</p>}
     >

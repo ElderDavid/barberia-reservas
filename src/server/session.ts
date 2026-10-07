@@ -32,3 +32,9 @@ export async function requireCustomer(returnTo = "/cuenta"): Promise<SessionUser
   if (user?.role === "owner") redirect("/admin");
   redirect(`/entrar?volver=${encodeURIComponent(returnTo)}`);
 }
+
+/** First letter of the signed-in user's name, for the header's account button. */
+export async function getAccountInitial(): Promise<string | undefined> {
+  const user = await getSessionUser();
+  return user ? (user.name.trim()[0] ?? "?").toLocaleUpperCase("es-CO") : undefined;
+}

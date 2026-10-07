@@ -14,6 +14,7 @@ import { addDays, formatDateTime, formatTime, localDay } from "@/lib/time";
 import { getAvailability } from "@/server/booking/availability";
 import { findByToken, withinSelfServiceWindow } from "@/server/booking/manage";
 import { checkoutUrl } from "@/server/payments/wompi";
+import { getAccountInitial } from "@/server/session";
 import { getShopInfo, whatsappUrl } from "@/server/shop";
 import { cancelar, reprogramar } from "./actions";
 
@@ -67,6 +68,7 @@ export default async function CitaPage({
   const { booking, service, barber, shop } = view;
   const info = await getShopInfo();
   const whatsappHref = info.whatsappPhone ? whatsappUrl(info.whatsappPhone) : undefined;
+  const accountInitial = await getAccountInitial();
   const canManage = booking.status === "confirmed" && withinSelfServiceWindow(view, now);
   const message = error ? ERRORS[error] : undefined;
   const holdExpiresAt = booking.holdExpiresAt;
@@ -92,7 +94,11 @@ export default async function CitaPage({
 
   return (
     <>
-      <SiteHeader shopName={info.name} whatsappHref={whatsappHref} />
+      <SiteHeader
+        shopName={info.name}
+        whatsappHref={whatsappHref}
+        accountInitial={accountInitial}
+      />
       <main id="contenido">
         <PageBanner
           eyebrow="Tu cita"

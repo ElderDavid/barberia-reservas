@@ -45,7 +45,7 @@ test("home lists services and links to booking and privacy", async ({ page }) =>
   await expect(page.getByRole("link", { name: "Ingresar" })).toHaveAttribute("href", "/entrar");
   await expect(page.getByRole("contentinfo")).toContainText("Todos los derechos reservados");
   await expect(page.getByRole("contentinfo")).toContainText("IngEM");
-  await page.getByRole("link", { name: "Política de privacidad" }).click();
+  await page.getByRole("link", { name: "Tratamiento de datos" }).click();
   await expect(page.getByRole("heading", { name: "Política de tratamiento de datos" })).toBeVisible(
     { timeout: 30_000 },
   );
@@ -53,18 +53,30 @@ test("home lists services and links to booking and privacy", async ({ page }) =>
 
 test("privacy page states the Ley 1581 rights", async ({ page }) => {
   await page.goto("/privacidad");
+  await expect(page.getByText("Conocer, actualizar y rectificar tus datos.")).toBeVisible({
+    timeout: 30_000,
+  });
   await expect(
-    page.getByText(
-      "De acuerdo con la Ley 1581 de 2012 puedes conocer, actualizar, rectificar y suprimir tus datos, y revocar la autorización",
-    ),
-  ).toBeVisible({ timeout: 30_000 });
+    page.getByText("Revocar la autorización y pedir que suprimamos tus datos."),
+  ).toBeVisible();
   await expect(
-    page.getByText("gestionar tus citas y comunicarnos contigo sobre ellas"),
+    page.getByText("Comunicarnos contigo sobre tus citas", { exact: false }),
   ).toBeVisible();
   await expect(page.getByText(/24 meses/)).toBeVisible();
 });
 
-for (const path of ["/", "/reservar", "/privacidad", "/entrar", "/mis-citas", "/sin-conexion"]) {
+for (const path of [
+  "/",
+  "/reservar",
+  "/privacidad",
+  "/terminos",
+  "/entrar",
+  "/registro",
+  "/recuperar",
+  "/cuenta/borrar",
+  "/mis-citas",
+  "/sin-conexion",
+]) {
   test(`no WCAG 2.2 AA violations on ${path}`, async ({ page }) => {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible({ timeout: 30_000 });

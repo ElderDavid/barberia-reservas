@@ -23,7 +23,6 @@ export default async function RecuperarPage({ searchParams }: Props) {
     <AuthShell
       shop={shop}
       whatsappHref={whatsappHref}
-      eyebrow="Tu cuenta"
       title="Recuperar contraseña"
       intro={<p>Escribe el correo con el que te registraste y te enviamos un enlace.</p>}
     >
