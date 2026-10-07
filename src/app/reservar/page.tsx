@@ -20,7 +20,7 @@ import { PHOTOS } from "@/lib/photos";
 import { addDays, formatDateTime, formatTime, localDay, localMinutes } from "@/lib/time";
 import { getAvailability } from "@/server/booking/availability";
 import { getBookingOptions } from "@/server/booking/create";
-import { getAccountInitial } from "@/server/session";
+import { getSessionUser } from "@/server/session";
 import { getShopInfo, whatsappUrl } from "@/server/shop";
 import { reservar } from "./actions";
 
@@ -48,7 +48,9 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
   const now = new Date();
   const [options, shop] = await Promise.all([getBookingOptions(), getShopInfo()]);
   const whatsappHref = shop.whatsappPhone ? whatsappUrl(shop.whatsappPhone) : undefined;
-  const accountInitial = await getAccountInitial();
+  const user = await getSessionUser();
+  const accountInitial = user?.name.trim().charAt(0).toLocaleUpperCase("es-CO");
+  const customer = user?.role === "customer" ? user : null;
   const { timeZone } = options;
   const service = options.services.find((item) => item.id === params.servicio);
   const barberName =
@@ -121,8 +123,21 @@ export default async function ReservarPage({ searchParams }: { searchParams: Pro
           <input type="hidden" name="barbero" value={params.barbero} />
           <input type="hidden" name="dia" value={params.dia} />
           <input type="hidden" name="hora" value={params.hora} />
-          <Field label="Nombre" name="nombre" autoComplete="name" required />
-          <Field label="Celular" name="celular" inputMode="numeric" autoComplete="tel" required />
+          <Field
+            label="Nombre"
+            name="nombre"
+            autoComplete="name"
+            defaultValue={customer?.name}
+            required
+          />
+          <Field
+            label="Celular"
+            name="celular"
+            inputMode="numeric"
+            autoComplete="tel"
+            defaultValue={customer?.phone?.replace(/^57/, "")}
+            required
+          />
           <PaymentOptions />
           <label className="flex items-start gap-2">
             <input type="checkbox" name="autorizo" value="si" required className="mt-1" />
