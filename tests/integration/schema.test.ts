@@ -20,6 +20,7 @@ const TABLES = [
   "expenses",
   "consents",
   "reviews",
+  "loyalty_redemptions",
 ];
 
 let shop: ShopFixture;

@@ -1,0 +1,1 @@
+ALTER TABLE "loyalty_redemptions" ENABLE ROW LEVEL SECURITY;

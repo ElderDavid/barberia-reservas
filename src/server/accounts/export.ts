@@ -1,6 +1,15 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "../db/client.ts";
-import { barbers, bookings, consents, reviews, services, user } from "../db/schema.ts";
+import {
+  barbers,
+  bookings,
+  consents,
+  loyaltyRedemptions,
+  reviews,
+  services,
+  user,
+} from "../db/schema.ts";
+import { getLoyalty } from "../loyalty.ts";
 
 export type AccountExport = {
   exportedAt: string;
@@ -19,6 +28,7 @@ export type AccountExport = {
     comment: string;
     ownerReply: string | null;
   }[];
+  loyalty: { stamps: number; redemptions: { stampsUsed: number; redeemedAt: string }[] };
 };
 
 /** Everything stored about one customer, for the "download my data" right (Ley 1581, art. 8). */
@@ -62,11 +72,24 @@ export async function exportAccount(userId: string, now: Date): Promise<AccountE
     .innerJoin(bookings, eq(bookings.id, reviews.bookingId))
     .where(eq(reviews.userId, userId))
     .orderBy(asc(bookings.startsAt));
+  const redemptions = await db
+    .select({
+      stampsUsed: loyaltyRedemptions.stampsUsed,
+      redeemedAt: loyaltyRedemptions.redeemedAt,
+    })
+    .from(loyaltyRedemptions)
+    .where(eq(loyaltyRedemptions.userId, userId))
+    .orderBy(asc(loyaltyRedemptions.redeemedAt));
+  const loyalty = await getLoyalty(userId);
   return {
     exportedAt: now.toISOString(),
     profile: { ...profile, createdAt: profile.createdAt.toISOString() },
     consents: rows.map((r) => ({ ...r, acceptedAt: r.acceptedAt.toISOString() })),
     bookings: booked.map((b) => ({ ...b, startsAt: b.startsAt.toISOString() })),
     reviews: rated.map((r) => ({ ...r, bookingStartsAt: r.bookingStartsAt.toISOString() })),
+    loyalty: {
+      stamps: loyalty.available,
+      redemptions: redemptions.map((r) => ({ ...r, redeemedAt: r.redeemedAt.toISOString() })),
+    },
   };
 }
