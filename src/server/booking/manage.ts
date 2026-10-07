@@ -66,6 +66,11 @@ export async function findByToken(token: string): Promise<BookingView | null> {
   return loadView(eq(bookings.manageTokenHash, hashToken(token)));
 }
 
+/** The booking with that id, or null. Callers check who may see it. */
+export async function findById(bookingId: string): Promise<BookingView | null> {
+  return loadView(eq(bookings.id, bookingId));
+}
+
 /** Whether the customer may still cancel or reschedule by themselves. */
 export function withinSelfServiceWindow(view: BookingView, now: Date): boolean {
   const cutoff = view.booking.startsAt.getTime() - view.shop.selfServiceCutoffHours * HOUR_MS;
