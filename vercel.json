@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then pnpm db:migrate; fi && pnpm build",
+  "buildCommand": "if [ \"$VERCEL_ENV\" = \"production\" ]; then pnpm db:migrate && if [ -n \"$OWNER_EMAIL\" ]; then pnpm owner:create; fi; fi && pnpm build",
   "crons": [{ "path": "/api/cron/expire-holds", "schedule": "0 8 * * *" }]
 }
