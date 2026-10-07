@@ -10,6 +10,7 @@ import {
   type SettingsResult,
   setWorkingHours,
   updateLegalInfo,
+  updateLoyaltySettings,
   updateShopSettings,
   upsertBarber,
   upsertService,
@@ -127,4 +128,10 @@ export async function guardarDatosLegales(formData: FormData): Promise<void> {
       privacyEmail: f.correoDatos ?? "",
     }),
   );
+}
+
+export async function guardarFidelidad(formData: FormData): Promise<void> {
+  await requireOwner();
+  const f = fields(formData);
+  done(await updateLoyaltySettings({ goal: int(f.sellos), reward: f.premio ?? "" }));
 }
