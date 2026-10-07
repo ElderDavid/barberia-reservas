@@ -2,9 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { PHOTOS, photoSrc } from "@/lib/photos";
 
-type HeroProps = { shopName: string; address?: string; whatsappHref?: string };
+type HeroProps = {
+  shopName: string;
+  address?: string;
+  whatsappHref?: string;
+  /** "h2" when a greeting above already holds the page's only h1. */
+  titleAs?: "h1" | "h2";
+};
 
-export function Hero({ shopName, address, whatsappHref }: HeroProps) {
+export function Hero({ shopName, address, whatsappHref, titleAs: Title = "h1" }: HeroProps) {
   const photo = PHOTOS.chair;
   return (
     <section className="relative isolate overflow-hidden bg-ink text-on-ink">
@@ -13,9 +19,9 @@ export function Hero({ shopName, address, whatsappHref }: HeroProps) {
           <p className="rise text-xs uppercase tracking-[0.3em] text-on-ink-muted">
             Barbería · Tradición y oficio
           </p>
-          <h1 className="rise-2 font-display text-5xl tracking-tight sm:text-display">
+          <Title className="rise-2 font-display text-5xl tracking-tight sm:text-display">
             {shopName}
-          </h1>
+          </Title>
           <p className="rise-3 max-w-md text-lg text-on-ink-muted">
             Cortes, barba y afeitado con navaja. Escoge tu barbero y tu hora en un minuto, sin
             llamadas ni filas.

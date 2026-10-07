@@ -122,7 +122,7 @@ to a barbershop. Tonal layers: Bone → Paper → Cocoa → Ink; no decorative h
 - Mobile-first; public pages are full-bleed bands with content max width 1152px (`max-w-6xl`),
   forms 768px (`max-w-3xl`), admin 1024px (`max-w-5xl`). Header and footer sit outside `<main>`.
 - On phones (below `md`) customer pages end with `<AppTabBar current=…>` (bottom tabs: Inicio,
-  Reservar, Mis citas, Barberos), outside `<main>`; the header hides its "Reservar" button there.
+  Reservar, Mis citas, Cuenta), outside `<main>`; the header hides its "Reservar" button there.
 
 ## Environment
 
