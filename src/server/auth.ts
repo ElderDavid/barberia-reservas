@@ -14,6 +14,13 @@ export const auth = betterAuth({
     provider: "pg",
     schema: { user, session, account, verification },
   }),
-  emailAndPassword: { enabled: true, disableSignUp: true, minPasswordLength: 10 },
+  emailAndPassword: { enabled: true, minPasswordLength: 10 },
+  user: {
+    additionalFields: {
+      // input: false → the sign-up and update endpoints ignore it; only the owner script sets it.
+      role: { type: "string", input: false, defaultValue: "customer" },
+      phone: { type: "string", required: false },
+    },
+  },
   session: { expiresIn: 60 * 60 * 24 * 30, updateAge: 60 * 60 * 24 },
 });

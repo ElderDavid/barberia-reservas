@@ -10,13 +10,14 @@ export type OwnerInput = { name: string; email: string; password: string };
 /**
  * Creates the owner's user and credential account. If an owner already exists, brings its name,
  * email and password in line with the input, so changing OWNER_* in Vercel and redeploying is how
- * the owner's login is changed. There is only one user: the app has no customer accounts.
+ * the owner's login is changed. Customer accounts (role "customer") are never touched.
  */
 export async function ensureOwner(input: OwnerInput): Promise<"created" | "exists" | "updated"> {
   const ctx = await auth.$context;
   const [existing] = await db
     .select({ id: user.id, name: user.name, email: user.email })
     .from(user)
+    .where(eq(user.role, "owner"))
     .orderBy(asc(user.createdAt))
     .limit(1);
 
@@ -24,7 +25,7 @@ export async function ensureOwner(input: OwnerInput): Promise<"created" | "exist
     const hash = await ctx.password.hash(input.password);
     const created = await ctx.adapter.create<{ id: string }>({
       model: "user",
-      data: { name: input.name, email: input.email, emailVerified: true },
+      data: { name: input.name, email: input.email, emailVerified: true, role: "owner" },
     });
     await ctx.adapter.create({
       model: "account",

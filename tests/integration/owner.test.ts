@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { ensureOwner } from "../../scripts/create-owner.ts";
+import { signUpCustomer } from "../../src/server/accounts/sign-up.ts";
 import { auth } from "../../src/server/auth.ts";
 import { sql, truncateAll } from "../setup/db.ts";
 
@@ -40,5 +41,26 @@ describe("owner account sync", () => {
     expect(await signIn(changed.email, changed.password)).toBe(true);
     expect(await signIn(first.email, first.password)).toBe(false);
     expect(await signIn(changed.email, first.password)).toBe(false);
+  });
+
+  it("leaves customers alone", async () => {
+    const customer = {
+      name: "Ana",
+      email: "ana@example.com",
+      phone: "3001234567",
+      password: "clave-de-ana-1",
+      consent: true as const,
+    };
+    await signUpCustomer(customer, new Date("2026-10-07T17:00:00Z"));
+    expect(await ensureOwner(first)).toBe("created");
+    expect(await ensureOwner({ ...first, name: "BarberStore" })).toBe("updated");
+    const rows = await sql<{ name: string; role: string }[]>`
+      select name, role from "user" order by role
+    `;
+    expect(rows).toEqual([
+      { name: "Ana", role: "customer" },
+      { name: "BarberStore", role: "owner" },
+    ]);
+    expect(await signIn(customer.email, customer.password)).toBe(true);
   });
 });
