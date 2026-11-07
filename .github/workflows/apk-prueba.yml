@@ -1,0 +1,32 @@
+name: APK de prueba
+on:
+  push:
+    branches: [apk-prueba]
+    paths: ["android-twa/**", ".github/workflows/apk-prueba.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17" }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.14.3" }
+      - name: Compilar APK
+        working-directory: android-twa
+        run: |
+          printf "sdk.dir=%s\n" "$ANDROID_HOME" > local.properties
+          gradle assembleDebug --no-daemon
+      - name: Guardar el APK en la rama
+        run: |
+          mkdir -p apk
+          cp android-twa/app/build/outputs/apk/debug/app-debug.apk apk/barberstore-prueba.apk
+          keytool -list -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey | grep SHA256 > apk/huella-sha256.txt || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898388+github-actions[bot]@users.noreply.github.com"
+          git add apk
+          git commit -m "APK de prueba [skip ci]"
+          git push
